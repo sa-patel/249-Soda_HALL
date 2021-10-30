@@ -7,6 +7,17 @@ from customObjects import Waypoint
 from waiter import KobukiRobot
 
 
+
+def transmit_display(waiter, bt):
+    """When loading drinks, transmit a list of drinks to display."""
+    if waiter.get_status() == RobotStatus.LOADING:
+        bt.send_drinks_to_display(waiter.drinks)
+    # TODO transmit blank in other states?
+
+
+
+
+
 waypoints = [Waypoint(i, (100.0, 100.0)) for i in range(NUM_WAYPOINTS)]
 nav_graph = NavGraph()
 
@@ -17,10 +28,10 @@ scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 
 bt1 = BluetoothController(1)
 bt2 = BluetoothController(2)
-# bt1.connect()
-# bt2.connect() 
-bt1.connect_sim()
-bt2.connect_sim()
+bt1.connect()
+bt2.connect() 
+#bt1.connect_sim()
+#bt2.connect_sim()
 
 #kobuki_state = [(RobotStatus.IDLE, [], 0), (RobotStatus.IDLE, [], 0)] # 2-tuple (STATE, Order) for each robot
 #kobuki_state = [[RobotStatus.IDLE, [], 0], [RobotStatus.IDLE, [], 0]] # 3-list [STATE, Orders, NUM_DRINKS] for each robot
@@ -38,10 +49,23 @@ scheduler.queue.print_queue()
 
 
 scheduler.allocate()
+transmit_display(waiter1,bt1)
+transmit_display(waiter2,bt2)
 print("First kobuki: ", waiter1.drinks)
 print("Second kobuki: ", waiter2.drinks)
-
 scheduler.queue.print_queue()
+
+while not bt1.receive_button_press(): 
+    time.sleep(1)
+    pass
+
+print("received first button press")
+
+while not bt2.receive_button_press():
+    time.sleep(1)
+    pass
+
+print("received second press") 
 
 #Drinks are loaded now keep waiting until button is pressed 
 # waiter1.push_button()
@@ -50,8 +74,10 @@ scheduler.queue.print_queue()
 waiter1.state = RobotStatus.MOVING
 waiter1.state = RobotStatus.MOVING
 
-scheduler.create("Zak",2,"Baileys",0)
-scheduler.allocate() # shouldnt do anything 
+scheduler.create("Zak",2,"Punch",0)
+scheduler.allocate() # shouldnt do anything
+transmit_display(waiter1,bt1)
+transmit_display(waiter2,bt2)
 scheduler.queue.print_queue() # shouldnt do anything 
 
 waiter1.state = RobotStatus.UNLOADING
@@ -68,13 +94,23 @@ waiter1.state = RobotStatus.MOVING
 waiter1.state = RobotStatus.MOVING
 
 scheduler.allocate() # shouldnt do anything 
+transmit_display(waiter1,bt1)
+transmit_display(waiter2,bt2)
 scheduler.queue.print_queue() # shouldnt do anything 
+
+waiter1.state = RobotStatus.UNLOADING
+waiter2.state = RobotStatus.UNLOADING
+waiter1.destinations.pop(0) # TODO this will not work for unordered deliveries.
+drink_name = waiter1.drinks.pop(0)
+waiter2.destinations.pop(0) # TODO this will not work for unordered deliveries.
+drink_name = waiter2.drinks.pop(0)
 
 waiter1.state = RobotStatus.LOADING
 waiter2.state = RobotStatus.LOADING
-
-
+time.sleep(10)
 scheduler.allocate()
+transmit_display(waiter1,bt1)
+transmit_display(waiter2,bt2)
 print("First kobuki: ", waiter1.drinks)
 print("Second kobuki: ", waiter2.drinks)
 
