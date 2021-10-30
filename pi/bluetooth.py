@@ -8,6 +8,7 @@ class BluetoothController:
         self.CHAR_DRIVE_ID = "32e6108c-2b22-4db5-a914-43ce41986c70"
         self.CHAR_DISP_ID = "32e6108d-2b22-4db5-a914-43ce41986c70"
         self.CHAR_BUTTON_ID = "32e6108e-2b22-4db5-a914-43ce41986c70"
+        self.CHAR_TUNE_ID = "32e6108f-2b22-4db5-a914-43ce41986c70"
         self.kobuki_channel = 0
         if self.device_id == 1:
             self.UUID_ADDR = "C0:98:e5:49:00:FE" #kobuki#1
@@ -17,16 +18,19 @@ class BluetoothController:
     def connect(self):
         from bluepy.btle import Peripheral
         print("Attempting connection")
-        try:
-            self.kobuki_controller = Peripheral(self.UUID_ADDR)
-            print("Connected succesfully")
-            sv = self.kobuki_controller.getServiceByUUID(self.SRV_ID)
-            self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
-            self.kobuki_display = sv.getCharacteristics(self.CHAR_DISP_ID)[0]
-            self.kobuki_button = sv.getCharacteristics(self.CHAR_BUTTON_ID)[0]
-        except Exception as e:
-            print("failed to connect. retrying...")
-            self.connect()
+        while True:
+            try:
+                self.kobuki_controller = Peripheral(self.UUID_ADDR)
+                print("Connected succesfully")
+                sv = self.kobuki_controller.getServiceByUUID(self.SRV_ID)
+                self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
+                self.kobuki_display = sv.getCharacteristics(self.CHAR_DISP_ID)[0]
+                self.kobuki_button = sv.getCharacteristics(self.CHAR_BUTTON_ID)[0]
+                # self.kobuki_tune = sv.getCharacteristics(self.CHAR_TUNE_ID)[0]
+                break
+            except Exception as e:
+                print(e)
+                print("failed to connect. retrying...")
 
 
     def disconnect(self):
@@ -115,3 +119,16 @@ class BluetoothController:
         #self.display_drink("stop")
         drinks_string = ",".join(drinks)
         self.display_drink(drinks_string)
+    
+    def send_pid_constants(self, kp_pos, kd_pos, kp_head, kd_head):
+        while True:
+            try:
+                byte_send = lambda n: bytearray(int(max(min(n, MAX_INT), MIN_INT)).to_bytes(1, 'big', signed=True))
+                send_kobuki_bytes = byte_send(kp_pos)
+                send_kobuki_bytes.append(byte_send(kd_pos[0]))
+                send_kobuki_bytes.append(byte_send(kp_head[0]))
+                send_kobuki_bytes.append(byte_send(kd_head[0]))
+                break
+            except:
+                "pid send failed"
+                continue
