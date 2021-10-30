@@ -63,8 +63,8 @@ class BluetoothController:
 
     def receive_button_press(self):
         # TODO receive bluetooth data from kobuki
-        self.kobuki_press.write(bytes(0))
-        button_state = bool(int(self.kobuki_press.read().hex()))
+        self.kobuki_button.write(bytes(0))
+        button_state = bool(int(self.kobuki_button.read().hex()))
         return button_state
 
     def display_drink(self,drink): 

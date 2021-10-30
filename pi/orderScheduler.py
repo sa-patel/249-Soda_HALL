@@ -40,8 +40,8 @@ class OrderScheduler:
                 self.display(i, k_order)
                 self.kobuki_state[i][0] = RobotStatus.LOADING
             elif state == RobotStatus.LOADING: 
-                if self.wait_for_delivery_press(i):
-                    self.kobuki_state[i] = [RobotStatus.DELIVERING_ORDER, k_order, drink_num]
+                self.wait_for_delivery_press(i)
+                #self.kobuki_state[i] = [RobotStatus.DELIVERING_ORDER, k_order, drink_num]
             elif state == RobotStatus.LOADING_UNLOADING:
                 self.wait_for_delivery_press(i)
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
@@ -81,14 +81,16 @@ class OrderScheduler:
         return self.queue.dequeue()
     
     def wait_for_delivery_press(self, kobuki_num): 
+        print("waiting for press")
         if kobuki_num == 0:
             bt = self.bt1
         else:
             bt = self.bt2
-        if self.bt1.receive_button_press():
+        if bt.receive_button_press():
+            print("received press")
             # Button was pressed. Update the state.
             state, orders, _ = self.kobuki_state[kobuki_num]
-            if state == RobotStatus.IDLE and len(orders) > 0:
+            if state == RobotStatus.LOADING and len(orders) > 0:
                 state = RobotStatus.PLAN_PATH_TO_TABLE
             elif state == RobotStatus.LOADING_UNLOADING:
                 if len(orders) > 0:
@@ -97,6 +99,7 @@ class OrderScheduler:
                 else:
                     # Return to base.
                     state = RobotStatus.PLAN_PATH_TO_BASE
+            self.kobuki_state[kobuki_num][0] = state
 
     def display(self,kobuki_num, order_list):
         drink_list = []
