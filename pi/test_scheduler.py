@@ -40,9 +40,9 @@ scheduler.create("Amit",1,"Gin",0)
 scheduler.create("Zak",2,"Rum",0)
 scheduler.create("Sagar",5,"Beer",0)
 scheduler.create("Max",4,"Vodka",0)
-scheduler.create("Amit",1,"Whiskey",0)
-scheduler.create("Zak",2,"Tequila",0)
-scheduler.create("Sagar",5,"Seltzer",0)
+scheduler.create("Amit",1,"Wsky",0)
+scheduler.create("Zak",2,"Teq",0)
+scheduler.create("Sagar",5,"Sltzr",0)
 scheduler.create("Max",4,"Pop",0)
 
 scheduler.queue.print_queue()
@@ -55,14 +55,14 @@ print("First kobuki: ", waiter1.drinks)
 print("Second kobuki: ", waiter2.drinks)
 scheduler.queue.print_queue()
 
-while not bt1.receive_button_press(): 
-    time.sleep(1)
+while not bt1.receive_button_press():
+    time.sleep(0.01)
     pass
 
 print("received first button press")
 
 while not bt2.receive_button_press():
-    time.sleep(1)
+    time.sleep(0.01)
     pass
 
 print("received second press") 
@@ -71,10 +71,10 @@ print("received second press")
 # waiter1.push_button()
 # waiter2.push_button()
 
-waiter1.state = RobotStatus.MOVING
-waiter1.state = RobotStatus.MOVING
+waiter1.state = RobotStatus.DELIVERYING
+waiter1.state = RobotStatus.DELIVERYING
 
-scheduler.create("Zak",2,"Punch",0)
+scheduler.create("Zak",2,"water",0)
 scheduler.allocate() # shouldnt do anything
 transmit_display(waiter1,bt1)
 transmit_display(waiter2,bt2)
@@ -90,8 +90,8 @@ drink_name = waiter2.drinks.pop(0)
 print("First kobuki: ", waiter1.drinks)
 print("Second kobuki: ", waiter2.drinks)
 
-waiter1.state = RobotStatus.MOVING
-waiter1.state = RobotStatus.MOVING
+waiter1.state = RobotStatus.DELIVERYING
+waiter1.state = RobotStatus.DELIVERYING
 
 scheduler.allocate() # shouldnt do anything 
 transmit_display(waiter1,bt1)
@@ -107,7 +107,7 @@ drink_name = waiter2.drinks.pop(0)
 
 waiter1.state = RobotStatus.LOADING
 waiter2.state = RobotStatus.LOADING
-time.sleep(10)
+time.sleep(5)
 scheduler.allocate()
 transmit_display(waiter1,bt1)
 transmit_display(waiter2,bt2)

@@ -10,19 +10,28 @@ class BluetoothController:
         self.CHAR_BUTTON_ID = "32e6108e-2b22-4db5-a914-43ce41986c70"
         self.kobuki_channel = 0
         if self.device_id == 1:
-            self.UUID_ADDR = "C0:98:e5:49:00:01" #kobuki#1
+            self.UUID_ADDR = "C0:98:e5:49:00:FE" #kobuki#1
         else: 
-            self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#2
+            self.UUID_ADDR = "C0:98:e5:49:00:FF" #kobuki#2
 
     def connect(self):
         from bluepy.btle import Peripheral
         print("Attempting connection")
-        kobuki_controller = Peripheral(self.UUID_ADDR)
-        print("Connected succesfully")
-        sv = kobuki_controller.getServiceByUUID(self.SRV_ID)
-        self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
-        self.kobuki_display = sv.getCharacteristics(self.CHAR_DISP_ID)[0]
-        self.kobuki_button = sv.getCharacteristics(self.CHAR_BUTTON_ID)[0]
+        try:
+            self.kobuki_controller = Peripheral(self.UUID_ADDR)
+            print("Connected succesfully")
+            sv = self.kobuki_controller.getServiceByUUID(self.SRV_ID)
+            self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
+            self.kobuki_display = sv.getCharacteristics(self.CHAR_DISP_ID)[0]
+            self.kobuki_button = sv.getCharacteristics(self.CHAR_BUTTON_ID)[0]
+        except Exception as e:
+            print("failed to connect. retrying...")
+            self.connect()
+
+
+    def disconnect(self):
+        if self.kobuki_channel is not None:
+            self.kobuki_controller.disconnect()
 
     def connect_sim(self):
         # Use this for testing without bluetooth
@@ -56,7 +65,17 @@ class BluetoothController:
         send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
         if self.kobuki_channel is not None:
             print(send_kobuki_bytes_0)
-            self.kobuki_channel.write(send_kobuki_bytes_0)
+            while True:
+                try:
+                    self.kobuki_channel.write(send_kobuki_bytes_0)
+                    break
+                except Exception as e:
+                    print(e)
+                    print("transmit failed")
+                    self.disconnect()
+                    self.connect()
+                    pass
+                
         else:
             # print("sim bt", send_kobuki_bytes_0)
             pass
@@ -68,9 +87,17 @@ class BluetoothController:
     def receive_button_press(self):
         # Receive bluetooth data from kobuki
         if self.kobuki_button is not None:
-            self.kobuki_button.write(bytes(0))
-            button_state = bool(int(self.kobuki_button.read().hex()))
-            return button_state
+            try:
+                self.kobuki_button.write(bytes(0))
+                button_state = bool(int(self.kobuki_button.read().hex()))
+                #self.kobuki_button.write(bytes(0))
+                return button_state
+            except Exception as e:
+                print(e)
+                print("could not receive button press")
+                self.disconnect()
+                self.connect()
+                self.receive_button_press()
         # Simulation:
         # return input("Button press {}? ".format(self.device_id))
         return randint(1,10) == 1
@@ -82,5 +109,9 @@ class BluetoothController:
             print("Kobuki {} display: {}".format(self.device_id, drink))
 
     def send_drinks_to_display(self, drinks):
-        drinks_string = " ".join(drinks)
+        #self.display_drink("start")
+        #for item in drinks: 
+        #   self.display_drink(item)
+        #self.display_drink("stop")
+        drinks_string = ",".join(drinks)
         self.display_drink(drinks_string)

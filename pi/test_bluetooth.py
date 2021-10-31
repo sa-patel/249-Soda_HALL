@@ -3,8 +3,9 @@ from bluetooth import BluetoothController
 SCALE_FACTOR = 100
 
 kobuki_1 = BluetoothController(1)
-#kobuki_2 = BluetoothController(2)
+kobuki_2 = BluetoothController(2)
 kobuki_1.connect()
+kobuki_2.connect()
 
 time.sleep(4)
 positional_error = 3.65 #meters 
@@ -19,5 +20,6 @@ print((int(heading_error_scaled_100x).to_bytes(2,'big').hex()))
 #kobuki_1.transmit_nav(positional_error,heading_error,remaining_dist)
 for i in range(5):
     print(kobuki_1.receive_button_press())
+    print(kobuki_2.receive_button_press())
 
 
