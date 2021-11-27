@@ -1,1 +1,29 @@
-this is home
+<html>
+<head>
+<script type="text/javascript">
+function placeOrder(){
+    const xhttp = new XMLHttpRequest();
+    const name = document.getElementById("name").value;
+    const table = document.getElementById("tableNum").value;
+    const order = document.getElementById("order").value;
+    let query = `name=${name}&table-num=${table}&order=${order}`
+    xhttp.open("GET", `/place-order?${query}`, true);
+    xhttp.send(query);
+}
+</script>
+</head>
+<body>
+    <div id="form">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"/>
+        <br>
+        <label for="tableNum">Table Number:</label>
+        <input type="text" id="tableNum" name="tableNum"/>
+        <br>
+        <label for="order">Your Order:</label>
+        <input type="text" id="order" name="order"/>
+        <br>
+        <button onclick="placeOrder()">Submit Order</button>
+    </div>
+</body>
+</html>

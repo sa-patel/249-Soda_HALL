@@ -1,6 +1,10 @@
+from customObjects import Queue, Order
+
 class OrderScheduler:
     SUCCESS = 0
     ID_NOT_FOUND = 1
+    queue = Queue()
+
     def __init__(self):
         self.next_id = 0
     def create(self, customer, table, order, priority):
@@ -10,6 +14,9 @@ class OrderScheduler:
         """
         id = self.next_id
         self.next_id += 1
+        order = Order(customer, table, priority, order, id)
+        self.queue.enqueue(order)
+        print("next id create", self.next_id)
         return id
 
     def cancel(order_id):
@@ -21,5 +28,5 @@ class OrderScheduler:
     
     def get_next_order(self):
         """Gets the next order to fulfill."""
-        # TODO
-        pass
+        print("next id get", self.next_id)
+        return self.queue.dequeue()

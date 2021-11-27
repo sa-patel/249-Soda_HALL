@@ -8,7 +8,7 @@ pip3 install flask
 from flask import Flask, render_template, request
 from orderScheduler import OrderScheduler
 
-scheduler = OrderScheduler()
+scheduler = None
 
 x = 0
 
@@ -20,12 +20,16 @@ def home():
 
 @app.route("/place-order", methods=["GET"])
 def place_order():
-    customer = request.form['name']
-    order = request.form['order']
-    table = request.form['table']
+    customer = request.args.get('name')
+    order = request.args.get('order')
+    table = request.args.get('table-num')
+    print(customer, order, table)
     priority = 0 # TODO: lookup priorities by name or login paramter
     scheduler.create(customer, table, order, priority)
+    return "order placed"
 
-def start():
+def start(sched):
+    global scheduler
+    scheduler = sched
     app.run(host = "0.0.0.0", use_reloader = False)
     
