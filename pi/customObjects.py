@@ -1,3 +1,7 @@
+"""customObjects.py
+Various classes for this project.
+"""
+
 class Segment:
     x0 = 0
     y0 = 0
@@ -14,14 +18,12 @@ class Queue:
     def enqueue(self, item):
         self.data.append(item)
         self.head += 1
-        print('enqueued something', self.head)
     
     def dequeue(self):
-        print(self.tail, self.head)
+        # print("tail head", self.tail, self.head)
         if self.tail < self.head:
-            result = data[tail]
+            result = self.data[self.tail]
             self.tail += 1
-            print("dequeue")
             return result
         
         # List is empty.

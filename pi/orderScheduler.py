@@ -1,3 +1,8 @@
+"""orderScheduler.py
+Implements scheduling algorithm to receive and schedule customer orders
+"""
+
+# Project modules
 from customObjects import Queue, Order
 
 class OrderScheduler:
@@ -16,7 +21,6 @@ class OrderScheduler:
         self.next_id += 1
         order = Order(customer, table, priority, order, id)
         self.queue.enqueue(order)
-        print("next id create", self.next_id)
         return id
 
     def cancel(order_id):
@@ -28,5 +32,4 @@ class OrderScheduler:
     
     def get_next_order(self):
         """Gets the next order to fulfill."""
-        print("next id get", self.next_id)
         return self.queue.dequeue()

@@ -10,7 +10,7 @@ from orderScheduler import OrderScheduler
 
 scheduler = None
 
-x = 0
+x = None
 
 app = Flask(__name__)
 
@@ -25,6 +25,7 @@ def place_order():
     table = request.args.get('table-num')
     print(customer, order, table)
     priority = 0 # TODO: lookup priorities by name or login paramter
+    # global scheduler
     scheduler.create(customer, table, order, priority)
     return "order placed"
 
