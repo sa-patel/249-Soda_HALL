@@ -3,16 +3,16 @@ from bluepy.btle import Peripheral, DefaultDelegate
 import argparse
 
 class BluetoothController:
-
+    
     def __init__(self, device_id):
         self.device_id = device_id
         self.SRV_ID = "32e61089-2b22-4db5-a914-43ce41986c70"
         self.CHAR_DRIVE_ID = "32e6108C-2b22-4db5-a914-43ce41986c70"
         self.kobuki_channel = 0
         if self.device_id == 1:
-            self.UUID_ADDR = "C0:98:E5:49:00:01" #kobuki#1
+            self.UUID_ADDR = "C0:98:e5:49:00:01" #kobuki#1
         else: 
-            self.UUID_ADDR = "C0:98:E5:49:00:02" #kobuki#2
+            self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#2
 
     def connect(self): 
         print("Attempting connection")
@@ -27,8 +27,22 @@ class BluetoothController:
         self.kobuki_channel.write(bytes([not led_state]))
 
     def transmit_nav(self, positional_error, heading_error):
-        led_state = bool(int(self.kobuki_channel.read().hex()))
-        self.kobuki_channel.write(bytes([not led_state]))
+        SCALE_FACTOR = 100
+        #positional_err = bytes(hex(int(positional_error)))
+        #self.kobuki_channel.write(bytes([1,1]))
+        #self.kobuki_channel.write(bytearray([1,2]))
+        #self.kobuki_channel.write(bytes(positional_error))
+        #self.kobuki_channel.write(bytes([not led_state]))
+        positional_error_scaled_100x = positional_error * SCALE_FACTOR #312
+        heading_error_scaled_100x = heading_error * SCALE_FACTOR #1323
+        send_kobuki_bytes_0 = bytearray(int(positional_error_scaled_100x).to_bytes(2,'big'))
+        send_kobuki_bytes_1 = bytearray(int(heading_error_scaled_100x).to_bytes(2,'big'))
+        send_kobuki_bytes_0.append(send_kobuki_bytes_1[0])  
+        send_kobuki_bytes_0.append(send_kobuki_bytes_1[1]) 
+        print(send_kobuki_bytes_0)
+        self.kobuki_channel.write(send_kobuki_bytes_0)
+        
+        
         
 
 
