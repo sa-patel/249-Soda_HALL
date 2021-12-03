@@ -14,6 +14,10 @@
 #include "buckler.h"
 
 #include "max44009.h"
+
+// Project modules
+#include "motors.h"
+
 #define SCALE_FACTOR 100.00
 // Intervals for advertising and connections
 static simple_ble_config_t ble_config = {
@@ -35,7 +39,7 @@ static simple_ble_service_t led_service = {{
 static simple_ble_char_t test_error_data = {.uuid16 = 0x108C};
 static simple_ble_char_t led1_state_char = {.uuid16 = 0x108b};
 static bool led_state = true;
-static uint8_t error_data[4];
+static uint8_t error_data[6];
 
 /*******************************************************************************
  *   State for this applications
@@ -48,9 +52,10 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
       float pos_error_data = ((error_data[0] << 8) | error_data[1])/SCALE_FACTOR;
       float head_error_data = ((error_data[2] << 8) | error_data[3])/SCALE_FACTOR;
+      float remain_dist_data = ((error_data[4] << 8) | error_data[5])/SCALE_FACTOR;
       printf("Recovered positional error data: %f \n",pos_error_data);
       printf("Recovered heading error data: %f \n",head_error_data);
-      
+      motors_drive_correction(pos_error_data, head_error_data, remain_dist_data);
     }
     if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
       printf("Got write to LED characteristic!\n");
@@ -98,7 +103,7 @@ int main(void) {
   simple_ble_add_service(&led_service);
 
   simple_ble_add_characteristic(1, 1, 0, 0,
-      sizeof(uint8_t)*4, error_data,
+      sizeof(uint8_t)*6, error_data,
       &led_service, &test_error_data);
 
   simple_ble_add_characteristic(1, 1, 0, 0,
@@ -109,6 +114,7 @@ int main(void) {
 
   while(1) {
     power_manage();
+    nrf_delay_ms()
   }
 }
 

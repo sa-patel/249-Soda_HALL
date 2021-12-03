@@ -24,9 +24,11 @@ class Navigation:
 
     def get_error_terms(self, x, y, heading, desired_segment):
         """Calculate and return the positional error and heading error."""
+        # TODO
         positional_error = 0
         heading_error = 0
-        return positional_error, heading_error
+        remaining_dist = 1000
+        return positional_error, heading_error, remaining_dist
     
     def get_desired_segment(self, kobuki_id):
         # TODO
