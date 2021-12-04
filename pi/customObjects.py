@@ -1,6 +1,7 @@
 """customObjects.py
 Various classes for this project.
 """
+from math import atan2
 
 class Segment:
     x0 = 0
@@ -8,8 +9,11 @@ class Segment:
     xf = 1
     yf = 1
     def segment_angle(self):
-        """Calculate and return the angle of the vector from x0,y0 to xf, yf."""
-        pass # TODO
+        """Calculate and return the angle of the vector from x0,y0 to xf, yf.
+        Angle 0 is up. Positive values go clockwise and negative values go 
+        counterclockwise.
+        """
+        return atan2(self.xf - self.x0, self.yf - self.y0)
 
 class Queue:
     data = []
