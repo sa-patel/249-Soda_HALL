@@ -10,7 +10,7 @@ class BluetoothController:
         self.CHAR_DRIVE_ID = "32e6108C-2b22-4db5-a914-43ce41986c70"
         self.kobuki_channel = 0
         if self.device_id == 1:
-            self.UUID_ADDR = "C0:98:e5:49:00:01" #kobuki#1
+            self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#1
         else: 
             self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#2
 
@@ -38,11 +38,11 @@ class BluetoothController:
         remaining_dist_scaled_100x = remaining_dist * SCALE_FACTOR
         send_kobuki_bytes_0 = bytearray(int(positional_error_scaled_100x).to_bytes(2,'big'))
         send_kobuki_bytes_1 = bytearray(int(heading_error_scaled_100x).to_bytes(2,'big'))
-        send_kobuki_bytes_2 = bytearray(int(remaining_dist_scaled_100x).to_bytes(2, 'big'))
+        #send_kobuki_bytes_2 = bytearray(int(remaining_dist_scaled_100x).to_bytes(2, 'big'))
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[0])
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[1])
-        send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])
-        send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
+        #send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])
+        #send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
         print(send_kobuki_bytes_0)
         self.kobuki_channel.write(send_kobuki_bytes_0)
 

@@ -2,9 +2,10 @@
 //
 // Creates a service for changing LED state over BLE
 
-#include <stdbool.h>
+//#include <stdbool.h>
 #include <stdint.h>
 #include "nrf.h"
+#include "nrf_delay.h"
 #include "app_util.h"
 #include "nrf_twi_mngr.h"
 #include "nrf_gpio.h"
@@ -38,7 +39,7 @@ static simple_ble_service_t led_service = {{
 
 static simple_ble_char_t test_error_data = {.uuid16 = 0x108C};
 static simple_ble_char_t led1_state_char = {.uuid16 = 0x108b};
-static bool led_state = true;
+static int led_state = 1;
 static uint8_t error_data[6];
 
 /*******************************************************************************
@@ -73,6 +74,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 int main(void) {
 
   // Initialize
+  initKobuki();
 
   // initialize display
   nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(1);
@@ -113,8 +115,9 @@ int main(void) {
   simple_ble_adv_only_name();
 
   while(1) {
-    power_manage();
-    nrf_delay_ms()
+    drive(-100, 100);
+    //power_manage();
+    nrf_delay_ms(500);
   }
 }
 

@@ -1,7 +1,22 @@
 #include "motors.h"
-
-#include "kobuki/kobukiActuator.h"
-
+#include "display.h"
+#include "buckler.h"
+#include "kobukiActuator.h"
+#include "kobukiSensorTypes.h"
+#include "kobukiSensorPoll.h"
+#include "kobukiUtilities.h"
+/*
+#include "app_error.h"
+#include "nrf.h"
+#include "nrf_delay.h"
+#include "nrfx_gpiote.h"
+#include "nrf_gpio.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+#include "nrf_pwr_mgmt.h"
+#include "nrf_serial.h"
+*/
 
 // Positional and heading error
 volatile float g_pos_error = 0;
@@ -20,6 +35,17 @@ const float kp_head = 1;
 const float kd_head = 1 / PERIOD;
 const float kp_dist = 1;
 
+void initKobuki(void) {
+  kobukiInit();
+
+  //NRF_LOG_INIT(NULL);
+  //NRF_LOG_DEFAULT_BACKENDS_INIT();
+
+  KobukiSensors_t initial_sensors;
+  
+  kobukiSensorPoll(&initial_sensors);
+}
+
 // Clamp a value between -max and max.
 int clamp(int value, int max) {
     if (value > max) {
@@ -32,8 +58,11 @@ int clamp(int value, int max) {
 }
 
 // Drive the kobuki motors
-static inline void drive(int left, int right) {
-    kobukiDriveDirect(clamp(left, MAX_SPEED), clamp(right, MAX_SPEED));
+void drive(int left, int right) {
+    int left_encoder = clamp(left, MAX_SPEED);
+    int right_encoder = clamp(right, MAX_SPEED);
+    printf("getting drive: %d, %d \n", left_encoder, right_encoder);
+    kobukiDriveDirect(left_encoder, right_encoder);
 }
 
 // Control the motors 
