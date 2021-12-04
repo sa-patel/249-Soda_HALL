@@ -8,6 +8,11 @@ class Segment:
     y0 = 0
     xf = 1
     yf = 1
+    def __init__(self, x0, y0, xf, yf):
+        self.x0 = x0
+        self.y0 = y0
+        self.xf = xf
+        self.yf = yf
     def segment_angle(self):
         """Calculate and return the angle of the vector from x0,y0 to xf, yf.
         Angle 0 is up. Positive values go clockwise and negative values go 
@@ -40,3 +45,9 @@ class Order:
         self.priority = priority
         self.order = order
         self.order_id = order_id
+
+class RobotStatus(Enum):
+    IDLE = 0
+    GETTING_ORDER = 1 # Going to the base station to pick up the order
+    DELIVERING_ORDER = 2 # Bringing order to customer
+    LOADING_UNLOADING = 3 # Order is being loaded onto or unloaded from robot

@@ -45,10 +45,11 @@ class BluetoothController:
         send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
         print(send_kobuki_bytes_0)
         self.kobuki_channel.write(send_kobuki_bytes_0)
-        
-        
-        
 
+    def transmit_stop(self):
+        """Stop the motors."""
+        # TODO
 
-
-
+    def receive(self):
+        # TODO receive bluetooth data from kobuki
+        return 0
