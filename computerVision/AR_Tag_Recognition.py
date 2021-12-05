@@ -52,16 +52,16 @@ new_mtxL, roiL= cv.getOptimalNewCameraMatrix(mtxL,distL,(wL,hL),1,(wL,hL))
 # Test AR_Tag recognition on AR still images. This section of code will be suplanted with live video later on
 # Show a frame with AR orientaion
 
-test_img = cv.imread("AR_Tag_2_meters.png")
+test_img = cv.imread("AR_Tag_orientation_test.png")
 
 gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
-aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_250)
+aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
 parameters =  aruco.DetectorParameters_create()
 corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 frame_markers = aruco.drawDetectedMarkers(test_img.copy(), corners, ids)
 
 
-if (ids):
+if ids is not None:
 	for i in range(len(ids)):
 		c = corners[i][0]
 		plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
