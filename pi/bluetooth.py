@@ -41,7 +41,7 @@ class BluetoothController:
         remaining_dist_scaled_100x = remaining_dist * SCALE_FACTOR
         send_kobuki_bytes_0 = bytearray(int(positional_error_scaled_100x).to_bytes(2,'big'))
         send_kobuki_bytes_1 = bytearray(int(heading_error_scaled_100x).to_bytes(2,'big'))
-        #send_kobuki_bytes_2 = bytearray(int(remaining_dist_scaled_100x).to_bytes(2, 'big'))
+        send_kobuki_bytes_2 = bytearray(int(remaining_dist_scaled_100x).to_bytes(2, 'big'))
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[0])
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[1])
         #send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])

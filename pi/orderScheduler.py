@@ -9,6 +9,7 @@ class OrderScheduler:
     SUCCESS = 0
     ID_NOT_FOUND = 1
     queue = Queue()
+    MAX_DRINK_CAPACITY = 3
 
     def __init__(self, num_kobukis, kobuki_state):
         self.next_id = 0
@@ -18,26 +19,35 @@ class OrderScheduler:
     def allocate(self):
         orders = [None, None]
         for i in range(len(self.kobuki_state)):
-            state, order_id = self.kobuki_state[i]
+            state, k_order, drink_num = self.kobuki_state[i]
             if state == RobotStatus.IDLE:
                 # Assign next order to robot
                 order = self.get_next_order()
-                if order is not None:
-                    self.kobuki_state[i] = (RobotStatus.PLAN_PATH_TO_BASE, order)
-                    orders[i] = order
+                if order is not None and drink_num < self.MAX_DRINK_CAPACITY: 
+                    cur_table = order.table
+                    drink_num += 1
+                    k_order.append(order)
+
+                while (order is not None) and drink_num < self.MAX_DRINK_CAPACITY: 
+                    if self.search_item_queue(cur_table): 
+                        drink_num += 1
+                        k_order.append(order)
+                       
+                self.kobuki_state[i] = (RobotStatus.GETTING_ORDER, k_order, drink_num)
+                orders[i] = k_order
             elif state == RobotStatus.GETTING_ORDER:
-                # TODO option to preempt if a higher priority order arrives.
+                # TODO option to preempt if a higher priority order arrives. 
+                
                 pass
-            else:
-                # The scheduler does not operate on other states.
+            elif state == RobotStatus.DELIVERING_ORDER:
+                # The scheduler does not operate on other states.                    
                 pass
         return orders
 
     def create(self, customer, table, order, priority):
         """Create an order with the given paramters. Add to queue.
         Returns SUCCESS, order_id if the order was added, where order_id is a
-        unique order identifier.
-        """
+        unique order identifier.        """
         id = self.next_id
         self.next_id += 1
         order = Order(customer, table, priority, order, id)
@@ -53,5 +63,14 @@ class OrderScheduler:
     
     def get_next_order(self):
         """Gets the next order to fulfill."""
-        next_order = self.queue.dequeue()
-        return next_order
+        return self.queue.dequeue()
+
+    def search_item_queue(self,table): 
+        iterate_temp = self.queue.head
+        while iterate_temp != self.queue.tail: 
+            order = self.queue.data[iterate_temp]
+            if order.table == table: 
+                self.queue.remove_queue_item(iterate_temp)
+                return order
+            iterate_temp -= 1
+        return False

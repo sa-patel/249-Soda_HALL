@@ -25,19 +25,25 @@ class Queue:
     data = []
     head = 0
     tail = 0
+    size = 0
     def enqueue(self, item):
         self.data.append(item)
         self.head += 1
+        self.size += 1
     
     def dequeue(self):
         # print("tail head", self.tail, self.head)
         if self.tail < self.head:
             result = self.data[self.tail]
             self.tail += 1
+            self.size -= 1
             return result
         
         # List is empty.
         return None
+    
+    def remove_queue_item(self): 
+
 
 class Order:
     def __init__(self, name, table, priority, order, order_id):
