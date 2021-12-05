@@ -23,7 +23,7 @@ class OrderScheduler:
                 # Assign next order to robot
                 order = self.get_next_order()
                 if order is not None:
-                    self.kobuki_state[i] = (RobotStatus.GETTING_ORDER, order)
+                    self.kobuki_state[i] = (RobotStatus.PLAN_PATH_TO_BASE, order)
                     orders[i] = order
             elif state == RobotStatus.GETTING_ORDER:
                 # TODO option to preempt if a higher priority order arrives.
@@ -53,4 +53,5 @@ class OrderScheduler:
     
     def get_next_order(self):
         """Gets the next order to fulfill."""
-        return self.queue.dequeue()
+        next_order = self.queue.dequeue()
+        return next_order

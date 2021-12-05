@@ -20,6 +20,15 @@ import server
 kobuki_state = [(RobotStatus.IDLE, 0), (RobotStatus.IDLE, 0)] # 2-tuple (STATE, Order) for each robot
 bt1 = BluetoothController(1)
 bt2 = BluetoothController(2)
+
+# Connect to nrf bluetooth
+# bt1.connect()
+# bt2.connect()
+
+# Simulate bluetooth connection when testing without nrf
+bt1.connect_sim()
+bt2.connect_sim()
+
 webcam = Webcam()
 scheduler = OrderScheduler(2, kobuki_state)
 NUM_KOBUKIS = 2
@@ -32,8 +41,8 @@ def loop():
     data2 = data["kobuki2"]
     bt_data1 = bt1.receive()
     bt_data2 = bt2.receive()
-    order1, order2 = scheduler.allocate()
-    segment1 = nav.get_desired_segment(1, order1, data1)
+    scheduler.allocate()
+    segment1 = nav.get_desired_segment(1, data1)
     positional_error1, heading_error1, remaining_dist1 = nav.get_error_terms(data1["x"], data1["y"], data1["heading"], segment1)
     bt1.transmit_nav(positional_error1, heading_error1, remaining_dist1)
 
@@ -45,4 +54,4 @@ def loop_entry():
 if __name__ == "__main__":
     loop_thread = threading.Thread(target=loop_entry)
     loop_thread.start()
-    # server.start(scheduler)
+    server.start(scheduler)

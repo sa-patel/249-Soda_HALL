@@ -21,6 +21,9 @@ class BluetoothController:
         sv = kobuki_controller.getServiceByUUID(self.SRV_ID)
         self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
 
+    def connect_sim(self):
+        # Use this for testing without bluetooth
+        self.kobuki_channel = None
 
     def transmit(self):
         led_state = bool(int(self.kobuki_channel.read().hex()))
@@ -43,8 +46,12 @@ class BluetoothController:
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[1])
         #send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])
         #send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
-        print(send_kobuki_bytes_0)
-        self.kobuki_channel.write(send_kobuki_bytes_0)
+        if self.kobuki_channel is not None:
+            print(send_kobuki_bytes_0)
+            self.kobuki_channel.write(send_kobuki_bytes_0)
+        else:
+            # print("sim bt", send_kobuki_bytes_0)
+            pass
 
     def transmit_stop(self):
         """Stop the motors."""
