@@ -3,10 +3,7 @@ Plans the routes for each robot and keeps the robots on their track.
 """
 
 # Project modules
-from customObjects import Segment
-from orderScheduler import OrderScheduler
-
-
+from customObjects import Segment, RobotStatus
 
 class Navigation:
     # x y coordinates of base station
@@ -42,7 +39,7 @@ class Navigation:
             pass
         else:
             print("navigation state not implemented")
-        return segment
+        return None
 
     def set_destination(self, kobuki_id, x, y):
         # TODO

@@ -2,6 +2,7 @@
 Various classes for this project.
 """
 from math import atan2
+from enum import Enum
 
 class Segment:
     x0 = 0

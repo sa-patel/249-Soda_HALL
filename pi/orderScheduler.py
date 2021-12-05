@@ -3,7 +3,7 @@ Implements scheduling algorithm to receive and schedule customer orders
 """
 
 # Project modules
-from customObjects import Queue, Order
+from customObjects import Queue, Order, RobotStatus
 
 class OrderScheduler:
     SUCCESS = 0
