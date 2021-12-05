@@ -51,13 +51,13 @@ simple_ble_app_t* simple_ble_app;
 void ble_evt_write(ble_evt_t const* p_ble_evt) {
     if (simple_ble_is_char_event(p_ble_evt, &test_error_data)) {
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
-      float pos_error_data = ((error_data[0] << 8) | error_data[1])/SCALE_FACTOR;
-      float head_error_data = ((error_data[2] << 8) | error_data[3])/SCALE_FACTOR;
-      float remain_dist_data = ((error_data[4] << 8) | error_data[5])/SCALE_FACTOR;
-      printf("Recovered positional error data: %f \n",pos_error_data);
-      printf("Recovered heading error data: %f \n",head_error_data);
-      motors_drive_correction(pos_error_data, head_error_data, remain_dist_data);
-    }
+      float pos_error = ((error_data[0] << 8) | error_data[1])/SCALE_FACTOR;
+      float head_error = ((error_data[2] << 8) | error_data[3])/SCALE_FACTOR;
+      float remain_dist = ((error_data[4] << 8) | error_data[5])/SCALE_FACTOR;
+      printf("Recovered positional error data: %f \n",pos_error);
+      printf("Recovered heading error data: %f \n",head_error);
+      motors_drive_correction(pos_error, head_error, remain_dist);
+     }
     if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
       printf("Got write to LED characteristic!\n");
       if (led_state) {
@@ -115,9 +115,8 @@ int main(void) {
   simple_ble_adv_only_name();
 
   while(1) {
-    drive(-100, 100);
-    //power_manage();
-    nrf_delay_ms(500);
+    drive();
+    nrf_delay_ms(250);
   }
 }
 

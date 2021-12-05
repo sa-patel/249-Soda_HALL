@@ -5,7 +5,7 @@
 #include "kobukiSensorTypes.h"
 #include "kobukiSensorPoll.h"
 #include "kobukiUtilities.h"
-/*
+
 #include "app_error.h"
 #include "nrf.h"
 #include "nrf_delay.h"
@@ -16,11 +16,7 @@
 #include "nrf_log_default_backends.h"
 #include "nrf_pwr_mgmt.h"
 #include "nrf_serial.h"
-*/
 
-// Positional and heading error
-volatile float g_pos_error = 0;
-volatile float g_head_error = 0;
 
 // Motor speed constants
 const int BASE_SPEED = 100;
@@ -34,6 +30,9 @@ const float kdd_pos = 0; // Not implemented
 const float kp_head = 1;
 const float kd_head = 1 / PERIOD;
 const float kp_dist = 1;
+
+volatile int left = 0;
+volatile int right = 0;
 
 void initKobuki(void) {
   kobukiInit();
@@ -58,7 +57,7 @@ int clamp(int value, int max) {
 }
 
 // Drive the kobuki motors
-void drive(int left, int right) {
+void drive(void) {
     int left_encoder = clamp(left, MAX_SPEED);
     int right_encoder = clamp(right, MAX_SPEED);
     printf("getting drive: %d, %d \n", left_encoder, right_encoder);
@@ -79,7 +78,9 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
     int forward_speed = clamp(remaining_dist * kp_dist, BASE_SPEED);
 
     // Drive the motors.
-    drive(forward_speed - turn_speed, forward_speed + turn_speed);
+    left = forward_speed - turn_speed;
+    right = forward_speed + turn_speed;
+    printf("left %d right %d\n", left, right);
 
     // Update prev variables.
     prev_pos_error = pos_error;
