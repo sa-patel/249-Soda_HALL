@@ -2,3 +2,4 @@ __pycache__/
 .vscode/
 *.pyc
 **/_build/
+.DS_Store
