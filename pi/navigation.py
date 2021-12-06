@@ -50,8 +50,13 @@ class Navigation:
         (9, 3),
         (3, 4)
     )
+    waypoint_locations = [
+        # Index is waypoint id. Value is (x,y) tuple.
+        # TODO fill this in once environment is defined.
+    ]
     NUM_WAYPOINTS = 11
     route = [] # List of upcoming waypoints.
+    current_segment = None
     def __init__(self, num_kobukis, kobuki_state):
         self.num_kobukis = num_kobukis
         self.kobuki_state = kobuki_state
@@ -76,18 +81,23 @@ class Navigation:
             return None
         elif state == RobotStatus.PLAN_PATH_TO_BASE:
             # Plan the route to the base station.
-            self.route = []
+            self.route = [] # Clear any saved routes
             x0 = webcam_data["x"]
             y0 = webcam_data["y"]
             self.plan_path(x0, y0, 0) # Point 0 is base station.
 
             segment = Segment(x0, y0, self.base_station_x, self.base_station_y)
-            self.kobuki_state[kobuki_id-1] = RobotStatus.GETTING_ORDER, order
+            self.kobuki_state[kobuki_id-1] = RobotStatus.RETURNING, order
             return segment
-        elif state == RobotStatus.GETTING_ORDER:
+        elif state == RobotStatus.RETURNING:
             # Drive the path to get the order from the base station.
-            # TODO
-            pass
+            if self.current_segment is None:
+                # Get the next segment
+                point_a = self.route.pop(0)
+                point_b = self.route[0]
+                s = self.convert_waypoints_to_segment(point_a, point_b)
+                self.current_segment = s
+                return self.current_segment
         elif state == RobotStatus.DELIVERING_ORDER:
             # Drive the path to get the order from base station to table.
 
@@ -121,6 +131,32 @@ class Navigation:
             print("No route found")
             self.route = None
     
-    def nearest_waypoint(self, x, y):
-        # TODO find the waypoint nearest the given coordinates
-        pass
+    def nearest_waypoint(self, x0, y0):
+        # find the waypoint nearest the given coordinates
+        # Currently ignores obstacles and simply finds the minimum distance
+        min_dist_sq = 10000
+        nearest = -1
+        for i in range(self.waypoint_locations):
+            x, y = self.waypoint_locations[i]
+            dist_sq = (x - x0)**2 + (y - y0)**2
+            if dist_sq < min_dist_sq:
+                min_dist_sq = dist_sq
+                nearest = i
+        return nearest
+    
+    def convert_waypoints_to_segment(self, a, b):
+        """Take 2 waypoints and create a Segment"""
+        def waypoint_to_coordinate(p):
+            if a.type == "PREDEFINED":
+                x, y = self.lookup_waypoint(p.value)
+            elif a.type == "XY":
+                x, y = p.value
+            return x, y
+        xa, ya = waypoint_to_coordinate(a)
+        xb, yb = waypoint_to_coordinate(b)
+        s = Segment(xa, ya, xb, yb)
+        return s
+        
+    def lookup_waypoint(self, p):
+        """Find coordinates of waypoint given by its id"""
+        return self.waypoint_locations[p]
