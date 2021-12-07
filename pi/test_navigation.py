@@ -14,8 +14,8 @@ test_waypoints = [
     (5, 10),
     (5, 5),
 ]
-kobuki_state = [(RobotStatus.IDLE, [0,0,0], 0)]
-nav = Navigation(1, kobuki_state, waypoint_locations=test_waypoints)
+kobuki_state = [(RobotStatus.IDLE, [0,0,0], 0), (RobotStatus.IDLE, [0,0,0], 0)]
+nav = Navigation(2, kobuki_state, waypoint_locations=test_waypoints)
 
 def loop(data1):
     segment1 = nav.get_desired_segment(1, data1)
@@ -30,12 +30,6 @@ def loop(data1):
             kobuki_state[0][0], data1["x"], data1["y"], data1["heading"], 
             segment1
         ))
-
-data = {
-    "x": 10,
-    "y": 10.1,
-    "heading": 0
-}
 
 traj = [
     (10, 10.1, -pi/2),
@@ -60,7 +54,9 @@ traj = [
 kobuki_state[0] = (RobotStatus.PLAN_PATH_TO_BASE, [], 0)
 print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
 for xyt in traj:
-    data["x"] = xyt[0]
-    data["y"] = xyt[1]
-    data["heading"] = xyt[2]
+    data = {
+        "x": xyt[0],
+        "y": xyt[1],
+        "heading": xyt[2],
+    }
     loop(data)

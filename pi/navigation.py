@@ -40,9 +40,6 @@ class Graph:
                     queue.append((i, history+[visit]))
         return None # No route found
 class Navigation:
-    # x y coordinates of base station
-    base_station_x = None
-    base_station_y = None
     all_edges = (
         (0, 10),
         (10, 6),
@@ -59,19 +56,23 @@ class Navigation:
         # Index is waypoint id. Value is (x,y) tuple.
         # TODO fill this in once environment is defined.
     ]
-    route = [] # List of upcoming waypoints.
-    current_segment = None
 
     # Constants
     NUM_WAYPOINTS = 11
     DISTANCE_EPSILON = 0.15**2 # meters squared
     ALMOST_ZERO = 0.06**2
     def __init__(self, num_kobukis, kobuki_state, waypoint_locations = None):
+        assert(len(kobuki_state) >= num_kobukis)
         self.num_kobukis = num_kobukis
         self.kobuki_state = kobuki_state
+        self.route = [[] for _ in range(self.num_kobukis)] # List of upcoming waypoints
+        self.current_segment = [None for _ in range(self.num_kobukis)]
+
+        # Build the navigation graph
         self.graph = Graph(self.NUM_WAYPOINTS)
         for a, b in self.all_edges:
             self.graph.add_edge(a, b)
+
         if waypoint_locations is not None:
             self.waypoint_locations = waypoint_locations
 
@@ -99,20 +100,21 @@ class Navigation:
 
         return positional_error, heading_error, remaining_dist
     
-    def advance_current_segment(self):
+    def advance_current_segment(self, kobuki_id):
         """Generate the next segment from self.route."""
         # Return False if route is completed.
-        if len(self.route) < 2:
+        route = self.route[kobuki_id-1]
+        if len(route) < 2:
             return False
 
-        point_a = self.route.pop(0)
-        point_b = self.route[0]
+        point_a = route.pop(0)
+        point_b = route[0]
         s = self.convert_waypoints_to_segment(point_a, point_b)
         # Ignore this segment if length is small
         if s.length_squared() < self.ALMOST_ZERO:
             return self.advance_current_segment()
         else:
-            self.current_segment = s
+            self.current_segment[kobuki_id-1] = s
         return True
 
     def point_reached(self, x, y, x2, y2):
@@ -122,14 +124,14 @@ class Navigation:
     
     def get_desired_segment(self, kobuki_id, webcam_data):
         assert(0 < kobuki_id and kobuki_id <= self.num_kobukis)
-        
+        current_segment = self.current_segment[kobuki_id-1]
         def advance_segment_check_state():
             # Get the next segment
-            segments_remain = self.advance_current_segment()
+            segments_remain = self.advance_current_segment(kobuki_id)
             if not segments_remain:
                 self.kobuki_state[kobuki_id-1] = RobotStatus.IDLE, order, num_drinks
                 return None
-            return self.current_segment
+            return current_segment
 
         state, order, num_drinks = self.kobuki_state[kobuki_id-1]
         if state == RobotStatus.IDLE:
@@ -137,26 +139,26 @@ class Navigation:
             return None
         elif state == RobotStatus.PLAN_PATH_TO_BASE:
             # Plan the route to the base station.
-            self.route = [] # Clear any saved routes
+            self.route[kobuki_id-1] = [] # Clear any saved routes
             x0 = webcam_data["x"]
             y0 = webcam_data["y"]
-            self.plan_path(x0, y0, 0) # Point 0 is base station.
+            self.plan_path(kobuki_id, x0, y0, 0) # Point 0 is base station.
             self.kobuki_state[kobuki_id-1] = RobotStatus.RETURNING, order, num_drinks
             return advance_segment_check_state()
         elif state == RobotStatus.RETURNING:
             # Drive the path to get the order from the base station.
-            if self.current_segment is None:
+            if current_segment is None:
                 return advance_segment_check_state()
             else:
                 #TODO go to the next segment once end of current segment is reached.
                 # if x, y is close to xf, yf, move on to the next segment
                 x0 = webcam_data["x"]
                 y0 = webcam_data["y"]
-                xf = self.current_segment.xf
-                yf = self.current_segment.yf
+                xf = current_segment.xf
+                yf = current_segment.yf
                 if self.point_reached(x0, y0, xf, yf):
                     return advance_segment_check_state()
-                return self.current_segment
+                return current_segment
         elif state == RobotStatus.DELIVERING_ORDER:
             # Drive the path to get the order from base station to table.
 
@@ -169,27 +171,24 @@ class Navigation:
         # TODO
         pass
     
-    def set_base_station_location(self, x, y):
-        self.base_station_x = x
-        self.base_station_y = y
-
-    def plan_path(self, x0, y0, destination):
+    def plan_path(self, kobuki_id, x0, y0, destination):
         start = Waypoint("XY", (x0, y0))
-        self.route.append(start)
+        route = self.route[kobuki_id-1]
+        route.append(start)
 
         # Find the nearest defined waypoint.
         nearest = self.nearest_waypoint(x0, y0)
 
         # Make route to destination
-        route = self.graph.bfs_route(nearest, destination)
-        if route is not None:
+        plan_route = self.graph.bfs_route(nearest, destination)
+        if plan_route is not None:
             # Convert ints to Waypoints
-            waypoint_route = [Waypoint("PREDEFINED", i) for i in route]
-            self.route += waypoint_route
+            waypoint_route = [Waypoint("PREDEFINED", i) for i in plan_route]
+            route += waypoint_route
             # self.route_print()
         else:
             print("No route found")
-            self.route = None
+            route = []
     
     def nearest_waypoint(self, x0, y0):
         # find the waypoint nearest the given coordinates
@@ -221,9 +220,10 @@ class Navigation:
         """Find coordinates of waypoint given by its id"""
         return self.waypoint_locations[p]
     
-    def route_print(self):
+    def route_print(self, kobuki_id):
         """Testing function to print the route"""
         print("route", end=" ")
-        for r in self.route:
+        route = self.route[kobuki_id-1]
+        for r in route:
             print(r, end=" ")
         print()
