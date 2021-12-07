@@ -43,8 +43,9 @@ def loop():
     bt_data2 = bt2.receive()
     scheduler.allocate()
     segment1 = nav.get_desired_segment(1, data1)
-    positional_error1, heading_error1, remaining_dist1 = nav.get_error_terms(data1["x"], data1["y"], data1["heading"], segment1)
-    bt1.transmit_nav(positional_error1, heading_error1, remaining_dist1)
+    if segment1 is not None:
+        positional_error1, heading_error1, remaining_dist1 = nav.get_error_terms(data1["x"], data1["y"], data1["heading"], segment1)
+        bt1.transmit_nav(positional_error1, heading_error1, remaining_dist1)
 
 def loop_entry():
     while True:

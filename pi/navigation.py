@@ -55,6 +55,7 @@ class Navigation:
         # TODO fill this in once environment is defined.
     ]
     NUM_WAYPOINTS = 11
+    DISTANCE_EPSILON = 0.3**2 # meters squared
     route = [] # List of upcoming waypoints.
     current_segment = None
     def __init__(self, num_kobukis, kobuki_state):
@@ -66,11 +67,31 @@ class Navigation:
 
     def get_error_terms(self, x, y, heading, desired_segment):
         """Calculate and return the positional error and heading error."""
-        # TODO
+        # TODO https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
         positional_error = 0
         heading_error = 0
         remaining_dist = 1000
+        x1 = desired_segment.x0
+        y1 = desired_segment.y0
+        x2 = desired_segment.xf
+        y2 = desired_segment.yf
+
+        # if x, y is close to x2, y2, move on to the next segment
+        if self.point_reached(x, y, x2, y2):
+            self.advance_current_segment()
         return positional_error, heading_error, remaining_dist
+    
+    def advance_current_segment(self):
+        # TODO handle end of list
+        point_a = self.route.pop(0)
+        point_b = self.route[0]
+        s = self.convert_waypoints_to_segment(point_a, point_b)
+        self.current_segment = s
+
+    def point_reached(self, x, y, x2, y2):
+        """Returns true if the points are within epsilon distance of each other"""
+        dist_sq = (x - x2)**2 + (y - y2)**2
+        return dist_sq < self.DISTANCE_EPSILON
     
     def get_desired_segment(self, kobuki_id, webcam_data):
         assert(0 < kobuki_id and kobuki_id <= self.num_kobukis)
@@ -85,18 +106,16 @@ class Navigation:
             x0 = webcam_data["x"]
             y0 = webcam_data["y"]
             self.plan_path(x0, y0, 0) # Point 0 is base station.
-
-            segment = Segment(x0, y0, self.base_station_x, self.base_station_y)
             self.kobuki_state[kobuki_id-1] = RobotStatus.RETURNING, order
-            return segment
+            return None
         elif state == RobotStatus.RETURNING:
             # Drive the path to get the order from the base station.
             if self.current_segment is None:
                 # Get the next segment
-                point_a = self.route.pop(0)
-                point_b = self.route[0]
-                s = self.convert_waypoints_to_segment(point_a, point_b)
-                self.current_segment = s
+                self.advance_current_segment()
+                return self.current_segment
+            else:
+                #TODO go to the next segment once end of current segment is reached.
                 return self.current_segment
         elif state == RobotStatus.DELIVERING_ORDER:
             # Drive the path to get the order from base station to table.
