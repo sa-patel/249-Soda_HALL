@@ -27,23 +27,24 @@ class OrderScheduler:
                     drink_num += 1
                     k_order.append(order)
 
-                # Find other orders going to the same table.
-                while (order is not None) and drink_num < self.MAX_DRINK_CAPACITY: 
-                    if self.search_item_queue(cur_table): 
-                        drink_num += 1
-                        k_order.append(order)
-                
-                # TODO Find other orders going to other tables.
-   
+                same_table_orders = self.queue.search_items_queue(cur_table,self.MAX_DRINK_CAPACITY - drink_num)
+                for item in same_table_orders:
+                    drink_num += 1
+                    k_order.append(item)
+                       
                 self.kobuki_state[i] = (RobotStatus.DELIVERING_ORDER, k_order, drink_num)
-
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
                 # TODO option to preempt if a higher priority order arrives. 
                 
                 pass
+            elif state == RobotStatus.DELIVERED_DRINKS:
+                # The scheduler does not operate on other states.
+                pass
             else:
                 # The scheduler does not operate on other states.
                 pass
+                
+        return None
 
     def create(self, customer, table, order, priority):
         """Create an order with the given paramters. Add to queue.
@@ -65,13 +66,3 @@ class OrderScheduler:
     def get_next_order(self):
         """Gets the next order to fulfill."""
         return self.queue.dequeue()
-
-    def search_item_queue(self,table): 
-        iterate_temp = self.queue.head
-        while iterate_temp != self.queue.tail: 
-            order = self.queue.data[iterate_temp]
-            if order.table == table: 
-                self.queue.remove_queue_item(iterate_temp)
-                return order
-            iterate_temp -= 1
-        return False

@@ -44,8 +44,8 @@ class BluetoothController:
         send_kobuki_bytes_2 = bytearray(int(remaining_dist_scaled_100x).to_bytes(2, 'big'))
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[0])
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[1])
-        #send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])
-        #send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
+        send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])
+        send_kobuki_bytes_0.append(send_kobuki_bytes_2[1])
         if self.kobuki_channel is not None:
             print(send_kobuki_bytes_0)
             self.kobuki_channel.write(send_kobuki_bytes_0)

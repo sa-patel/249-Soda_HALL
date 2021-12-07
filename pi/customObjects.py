@@ -41,9 +41,38 @@ class Queue:
         # List is empty.
         return None
     
-    def remove_queue_item(self): 
-        pass
+    def search_item_queue(self,table):
+        iter = self.tail
+        while iter != self.head:
+            if self.data[iter].table == table: 
+                order_return = self.remove_item_queue(iter)
+                return order_return
+            iter += 1
+        return None
 
+    def search_items_queue(self,table,capacity):
+        iter = self.tail
+        items = []
+        while iter != self.head and len(items) < capacity:
+            if self.data[iter].table == table: 
+                order_return = self.remove_item_queue(iter)
+                items.append(order_return)
+                iter -= 1
+            iter += 1
+        return items
+    
+    def remove_item_queue(self,index_table):
+        self.head -=1
+        self.size -=1
+        return self.data.pop(index_table)
+
+    def print_queue(self): 
+        iter = self.tail
+        print("Tail ",end="")
+        while iter != self.head:
+            print(" -> {",self.data[iter].order, "for", self.data[iter].name,"on Table", self.data[iter].table,"}",end="")
+            iter += 1
+        print("\n")
 class Order:
     def __init__(self, name, table, priority, order, order_id):
         self.name = name
