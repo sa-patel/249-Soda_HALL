@@ -11,9 +11,14 @@ Plans the routes for each robot and keeps the robots on their track.
 
                     0
 """
+# External libraries
+from math import pi
 
 # Project modules
 from customObjects import Segment, RobotStatus, Waypoint
+
+
+norm_sq = lambda x, y: x**2 + y**2
 
 class Graph:
     def __init__(self, n):
@@ -54,49 +59,79 @@ class Navigation:
         # Index is waypoint id. Value is (x,y) tuple.
         # TODO fill this in once environment is defined.
     ]
-    NUM_WAYPOINTS = 11
-    DISTANCE_EPSILON = 0.3**2 # meters squared
     route = [] # List of upcoming waypoints.
     current_segment = None
-    def __init__(self, num_kobukis, kobuki_state):
+
+    # Constants
+    NUM_WAYPOINTS = 11
+    DISTANCE_EPSILON = 0.15**2 # meters squared
+    ALMOST_ZERO = 0.06**2
+    def __init__(self, num_kobukis, kobuki_state, waypoint_locations = None):
         self.num_kobukis = num_kobukis
         self.kobuki_state = kobuki_state
         self.graph = Graph(self.NUM_WAYPOINTS)
         for a, b in self.all_edges:
             self.graph.add_edge(a, b)
+        if waypoint_locations is not None:
+            self.waypoint_locations = waypoint_locations
 
     def get_error_terms(self, x, y, heading, desired_segment):
-        """Calculate and return the positional error and heading error."""
-        # TODO https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_two_points
-        positional_error = 0
-        heading_error = 0
-        remaining_dist = 1000
+        """Calculate and return the positional error, heading error, and 
+        remaining distance.
+        A positive positional error is to the right of the segment. Positive 
+        heading error is to the right of desired heading.
+        """
         x1 = desired_segment.x0
         y1 = desired_segment.y0
         x2 = desired_segment.xf
         y2 = desired_segment.yf
+        
+       
+        # Find error terms
+        heading_error = heading - desired_segment.segment_angle()
+        if heading_error > pi:
+            heading_error -= 2*pi
+        remaining_dist = norm_sq(x2-x, y2-y)**0.5
+        segment_length = desired_segment.length_squared()**0.5
+        if segment_length < self.ALMOST_ZERO:
+            print("Error: segment length near zero")
+        positional_error = ((x2-x1)*(y1-y)-(y2-y1)*(x1-x))/segment_length
 
-        # if x, y is close to x2, y2, move on to the next segment
-        if self.point_reached(x, y, x2, y2):
-            self.advance_current_segment()
         return positional_error, heading_error, remaining_dist
     
     def advance_current_segment(self):
-        # TODO handle end of list
+        """Generate the next segment from self.route."""
+        # Return False if route is completed.
+        if len(self.route) < 2:
+            return False
+
         point_a = self.route.pop(0)
         point_b = self.route[0]
         s = self.convert_waypoints_to_segment(point_a, point_b)
-        self.current_segment = s
+        # Ignore this segment if length is small
+        if s.length_squared() < self.ALMOST_ZERO:
+            return self.advance_current_segment()
+        else:
+            self.current_segment = s
+        return True
 
     def point_reached(self, x, y, x2, y2):
         """Returns true if the points are within epsilon distance of each other"""
-        dist_sq = (x - x2)**2 + (y - y2)**2
+        dist_sq = norm_sq(x - x2, y - y2)
         return dist_sq < self.DISTANCE_EPSILON
     
     def get_desired_segment(self, kobuki_id, webcam_data):
         assert(0 < kobuki_id and kobuki_id <= self.num_kobukis)
-        # TODO
-        state, order = self.kobuki_state[kobuki_id-1]
+        
+        def advance_segment_check_state():
+            # Get the next segment
+            segments_remain = self.advance_current_segment()
+            if not segments_remain:
+                self.kobuki_state[kobuki_id-1] = RobotStatus.IDLE, order, num_drinks
+                return None
+            return self.current_segment
+
+        state, order, num_drinks = self.kobuki_state[kobuki_id-1]
         if state == RobotStatus.IDLE:
             # stop the motors.
             return None
@@ -106,16 +141,21 @@ class Navigation:
             x0 = webcam_data["x"]
             y0 = webcam_data["y"]
             self.plan_path(x0, y0, 0) # Point 0 is base station.
-            self.kobuki_state[kobuki_id-1] = RobotStatus.RETURNING, order
-            return None
+            self.kobuki_state[kobuki_id-1] = RobotStatus.RETURNING, order, num_drinks
+            return advance_segment_check_state()
         elif state == RobotStatus.RETURNING:
             # Drive the path to get the order from the base station.
             if self.current_segment is None:
-                # Get the next segment
-                self.advance_current_segment()
-                return self.current_segment
+                return advance_segment_check_state()
             else:
                 #TODO go to the next segment once end of current segment is reached.
+                # if x, y is close to xf, yf, move on to the next segment
+                x0 = webcam_data["x"]
+                y0 = webcam_data["y"]
+                xf = self.current_segment.xf
+                yf = self.current_segment.yf
+                if self.point_reached(x0, y0, xf, yf):
+                    return advance_segment_check_state()
                 return self.current_segment
         elif state == RobotStatus.DELIVERING_ORDER:
             # Drive the path to get the order from base station to table.
@@ -129,7 +169,7 @@ class Navigation:
         # TODO
         pass
     
-    def set_base_station_location(x, y):
+    def set_base_station_location(self, x, y):
         self.base_station_x = x
         self.base_station_y = y
 
@@ -145,7 +185,8 @@ class Navigation:
         if route is not None:
             # Convert ints to Waypoints
             waypoint_route = [Waypoint("PREDEFINED", i) for i in route]
-            self.route += route
+            self.route += waypoint_route
+            # self.route_print()
         else:
             print("No route found")
             self.route = None
@@ -155,9 +196,9 @@ class Navigation:
         # Currently ignores obstacles and simply finds the minimum distance
         min_dist_sq = 10000
         nearest = -1
-        for i in range(self.waypoint_locations):
+        for i in range(len(self.waypoint_locations)):
             x, y = self.waypoint_locations[i]
-            dist_sq = (x - x0)**2 + (y - y0)**2
+            dist_sq = norm_sq(x - x0, y - y0)
             if dist_sq < min_dist_sq:
                 min_dist_sq = dist_sq
                 nearest = i
@@ -166,9 +207,9 @@ class Navigation:
     def convert_waypoints_to_segment(self, a, b):
         """Take 2 waypoints and create a Segment"""
         def waypoint_to_coordinate(p):
-            if a.type == "PREDEFINED":
+            if p.type == "PREDEFINED":
                 x, y = self.lookup_waypoint(p.value)
-            elif a.type == "XY":
+            elif p.type == "XY":
                 x, y = p.value
             return x, y
         xa, ya = waypoint_to_coordinate(a)
@@ -179,3 +220,10 @@ class Navigation:
     def lookup_waypoint(self, p):
         """Find coordinates of waypoint given by its id"""
         return self.waypoint_locations[p]
+    
+    def route_print(self):
+        """Testing function to print the route"""
+        print("route", end=" ")
+        for r in self.route:
+            print(r, end=" ")
+        print()

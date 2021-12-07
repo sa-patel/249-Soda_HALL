@@ -17,7 +17,6 @@ class OrderScheduler:
         self.kobuki_state = kobuki_state
 
     def allocate(self):
-        orders = [None, None]
         for i in range(len(self.kobuki_state)):
             state, k_order, drink_num = self.kobuki_state[i]
             if state == RobotStatus.IDLE:
@@ -28,21 +27,23 @@ class OrderScheduler:
                     drink_num += 1
                     k_order.append(order)
 
+                # Find other orders going to the same table.
                 while (order is not None) and drink_num < self.MAX_DRINK_CAPACITY: 
                     if self.search_item_queue(cur_table): 
                         drink_num += 1
                         k_order.append(order)
-                       
-                self.kobuki_state[i] = (RobotStatus.GETTING_ORDER, k_order, drink_num)
-                orders[i] = k_order
-            elif state == RobotStatus.GETTING_ORDER:
+                
+                # TODO Find other orders going to other tables.
+   
+                self.kobuki_state[i] = (RobotStatus.DELIVERING_ORDER, k_order, drink_num)
+
+            elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
                 # TODO option to preempt if a higher priority order arrives. 
                 
                 pass
-            elif state == RobotStatus.DELIVERING_ORDER:
-                # The scheduler does not operate on other states.                    
+            else:
+                # The scheduler does not operate on other states.
                 pass
-        return orders
 
     def create(self, customer, table, order, priority):
         """Create an order with the given paramters. Add to queue.
