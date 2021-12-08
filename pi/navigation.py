@@ -3,11 +3,11 @@ Plans the routes for each robot and keeps the robots on their track.
 """
 
 """waypoints:
-     1       2      9       3       4
+     1       2    9   10    3       4
      _________              _________
     |         |            |         |
     |_________|            |_________|
-     5        6     10      7        8
+     5        6   11  12    7        8
 
                     0
 
@@ -46,15 +46,19 @@ class Graph:
         return None # No route found
 class Navigation:
     all_edges = (
-        (0, 10),
-        (10, 6),
+        (0, 11),
+        (11, 9),
+        (0, 12),
+        (12, 10),
+        (11, 6),
         (6, 5),
-        (10, 7),
+        (12, 7),
         (7, 8),
         (10, 9),
+        (11, 12),
         (9, 2),
         (2, 1),
-        (9, 3),
+        (10, 3),
         (3, 4)
     )
     waypoint_locations = [
@@ -66,7 +70,7 @@ class Navigation:
     ]
 
     # Constants
-    NUM_WAYPOINTS = 11
+    NUM_WAYPOINTS = 13
     DISTANCE_EPSILON = 0.15**2 # meters squared
     ALMOST_ZERO = 0.06**2
     def __init__(self, num_kobukis, kobuki_state, waypoint_locations = None):
@@ -138,7 +142,7 @@ class Navigation:
             # Get the next segment
             segments_remain = self.advance_current_segment(kobuki_id)
             if not segments_remain:
-                self.kobuki_state[kobuki_id-1] = done_state, order, num_drinks
+                self.kobuki_state[kobuki_id-1] = [done_state, order, num_drinks]
                 return None
             return self.current_segment[kobuki_id-1]
 
@@ -147,6 +151,7 @@ class Navigation:
             # stop the motors.
             return None
         if state == RobotStatus.LOADING_UNLOADING:
+            # TODO handle a button press and advance to the next state
             # stop the motors.
             return None
         elif state == RobotStatus.PLAN_PATH_TO_BASE:
@@ -155,7 +160,7 @@ class Navigation:
             x0 = webcam_data["x"]
             y0 = webcam_data["y"]
             self.plan_path(kobuki_id, x0, y0, 0) # Point 0 is base station.
-            self.kobuki_state[kobuki_id-1] = RobotStatus.RETURNING, order, num_drinks
+            self.kobuki_state[kobuki_id-1] = [RobotStatus.RETURNING, order, num_drinks]
             return advance_segment_check_state(RobotStatus.IDLE)
         elif state == RobotStatus.RETURNING:
             # Drive the path to get the order from the base station.
@@ -176,7 +181,7 @@ class Navigation:
             y0 = webcam_data["y"]
             dest = self.convert_table_to_waypoint(order.pop(0).table)
             self.plan_path(kobuki_id, x0, y0, dest) # Point 0 is base station.
-            self.kobuki_state[kobuki_id-1] = RobotStatus.DELIVERING_ORDER, order, num_drinks
+            self.kobuki_state[kobuki_id-1] = [RobotStatus.DELIVERING_ORDER, order, num_drinks]
             return advance_segment_check_state(RobotStatus.LOADING_UNLOADING)
         elif state == RobotStatus.DELIVERING_ORDER:
             # Drive the path to get the order to the table.
@@ -195,10 +200,6 @@ class Navigation:
             print("navigation state not implemented")
         return None
 
-    def set_destination(self, kobuki_id, x, y):
-        # TODO
-        pass
-    
     def plan_path(self, kobuki_id, x0, y0, destination):
         start = Waypoint("XY", (x0, y0))
         route = self.route[kobuki_id-1]

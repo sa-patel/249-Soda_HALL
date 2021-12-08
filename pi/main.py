@@ -17,7 +17,7 @@ from orderScheduler import OrderScheduler
 from customObjects import RobotStatus
 import server
 
-kobuki_state = [(RobotStatus.IDLE, [], 0), (RobotStatus.IDLE, [], 0)] # 2-tuple (STATE, Order) for each robot
+kobuki_state = [[RobotStatus.IDLE, [], 0], [RobotStatus.IDLE, [], 0]] # 3-list [STATE, Orders, NUM_DRINKS] for each robot
 bt1 = BluetoothController(1)
 bt2 = BluetoothController(2)
 

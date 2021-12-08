@@ -56,11 +56,12 @@ class OrderScheduler:
         self.queue.enqueue(order)
         return id
 
-    def cancel(order_id):
+    def cancel(self, order_id):
         """Cancel the order with the given order_id.
         Returns SUCCESS on success, ID_NOT_FOUND if order_id is not found in the
         task list.
         """
+        #TODO
         return self.SUCCESS
     
     def get_next_order(self):
