@@ -65,7 +65,7 @@ int clamp(int value, int max) {
 void drive(void) {
     int left_encoder = clamp(left, MAX_SPEED);
     int right_encoder = clamp(right, MAX_SPEED);
-    printf("getting drive: %d, %d \n", left_encoder, right_encoder);
+    //printf("getting drive: %d, %d \n", left_encoder, right_encoder);
     kobukiDriveDirect(left_encoder, right_encoder);
 }
 

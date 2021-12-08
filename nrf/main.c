@@ -16,6 +16,8 @@
 #include "nrf_pwr_mgmt.h"
 #include "nrf_serial.h"
 #include "display.h"
+#include "lsm9ds1.h"
+#include "nrf_drv_spi.h"
 
 #include "buckler.h"
 #include "kobukiActuator.h"
@@ -35,6 +37,7 @@
   TURNING
 } KobukiState_t;
 
+NRF_TWI_MNGR_DEF(twi_mngr_instance, 5, 0);
 
 #define SCALE_FACTOR 100.00
 // Intervals for advertising and connections
@@ -60,10 +63,12 @@ static simple_ble_char_t test_error_data = {.uuid16 = 0x108c};
 static simple_ble_char_t led1_state_char = {.uuid16 = 0x108b};
 
 static int led_state = 1;
-static uint8_t button_press[1];
+static uint8_t button_press;
 static uint8_t error_data[6];
+static volatile int g_button_pressed = 0;
 
 static unsigned char buf_disp[16] = "No Drink"; 
+KobukiSensors_t sensors = {0};
 //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
 //display_write( buf, DISPLAY_LINE_1);
 
@@ -92,11 +97,15 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
       //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
       char send_buf[16];
-      KobukiSensors_t initial_sensors;
-      kobukiSensorPoll(&initial_sensors);
-      button_press[0] = is_button_pressed(&initial_sensors);
-      snprintf(send_buf, 16,"Drinks placed"); 
-      display_write((char*)send_buf, DISPLAY_LINE_1);
+      button_press = g_button_pressed;
+      printf("button pressed %d \n",button_press);
+      g_button_pressed = 0;
+
+      //KobukiSensors_t initial_sensors;
+      //kobukiSensorPoll(&initial_sensors);
+
+      //snprintf(send_buf, 16,"Drinks placed"); 
+      //display_write((char*)send_buf, DISPLAY_LINE_1);
     }
     if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
       printf("Got write to LED characteristic!\n");
@@ -113,16 +122,15 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 int main(void) {
 
   // Initialize
-  kobukiInit();
 
   // initialize RTT library
   NRF_LOG_INIT(NULL);
   NRF_LOG_DEFAULT_BACKENDS_INIT();
   printf("Initialized RTT!\n");
 
+  //kobukiSensorPoll(&initial_sensors);
   KobukiState_t state = DRIVING;
-  KobukiSensors_t initial_sensors;
-  kobukiSensorPoll(&initial_sensors);
+  
 
   // initialize display
   nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(1);
@@ -153,12 +161,12 @@ int main(void) {
   simple_ble_add_service(&generic_service);
 
   simple_ble_add_characteristic(1, 1, 0, 0,
-    sizeof(uint8_t),button_press,
+    sizeof(uint8_t),&button_press,
     &generic_service, &get_button_press);
   
-  simple_ble_add_characteristic(1, 1, 0, 0,
+  /*simple_ble_add_characteristic(1, 1, 0, 0,
       sizeof(uint8_t)*6, error_data,
-      &generic_service, &test_error_data); //send 6 bytes, 2 bytes for each error 
+      &generic_service, &test_error_data); *///send 6 bytes, 2 bytes for each error 
 
   simple_ble_add_characteristic(1, 1, 0, 0,
       sizeof(led_state), (uint8_t*)&led_state,
@@ -169,15 +177,32 @@ int main(void) {
       &generic_service, &display_string_data);
 
 
-
-
+  // initialize i2c master (two wire interface)
+  /*nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
+  i2c_config.scl = BUCKLER_SENSORS_SCL;
+  i2c_config.sda = BUCKLER_SENSORS_SDA;
+  i2c_config.frequency = NRF_TWIM_FREQ_100K;
+  error_code = nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
+  APP_ERROR_CHECK(error_code);
+  lsm9ds1_init(&twi_mngr_instance);
+  printf("IMU initialized!\n");*/
+  kobukiInit();
 
   // Start Advertising
   simple_ble_adv_only_name();
-
+  
   while(1) {
+    
+    kobukiSensorPoll(&sensors);
+    /*if (is_button_pressed(&sensors)) {
+      g_button_pressed = 1;
+    }*/
+    int check_button = is_button_pressed(&sensors);
+    if (check_button){ 
+      g_button_pressed = 1;
+    }
     drive();
-    nrf_delay_ms(250);
+    //nrf_delay_ms(250);
   }
 }
 
