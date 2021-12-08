@@ -7,7 +7,8 @@ class BluetoothController:
     def __init__(self, device_id):
         self.device_id = device_id
         self.SRV_ID = "32e61089-2b22-4db5-a914-43ce41986c70"
-        self.CHAR_DRIVE_ID = "32e6108C-2b22-4db5-a914-43ce41986c70"
+        self.CHAR_DRIVE_ID = "32e6108c-2b22-4db5-a914-43ce41986c70"
+        self.CHAR_DISP_ID = "32e6108d-2b22-4db5-a914-43ce41986c70"
         self.kobuki_channel = 0
         if self.device_id == 1:
             self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#1
@@ -20,6 +21,8 @@ class BluetoothController:
         print("Connected succesfully")
         sv = kobuki_controller.getServiceByUUID(self.SRV_ID)
         self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
+        self.kobuki_display = sv.getCharacteristics(self.CHAR_DISP_ID)[0]
+        
 
     def connect_sim(self):
         # Use this for testing without bluetooth
@@ -57,6 +60,9 @@ class BluetoothController:
         """Stop the motors."""
         # TODO
 
-    def receive(self):
+    def receive_button_press(self):
         # TODO receive bluetooth data from kobuki
         return 0
+
+    def display_drink(self,drink): 
+        self.kobuki_display.write(bytes(drink, 'utf-8'))

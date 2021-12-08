@@ -4,6 +4,8 @@ Implements scheduling algorithm to receive and schedule customer orders
 
 # Project modules
 from customObjects import Queue, Order, RobotStatus
+from bluetooth import BluetoothController
+import time
 
 class OrderScheduler:
     SUCCESS = 0
@@ -11,10 +13,13 @@ class OrderScheduler:
     queue = Queue()
     MAX_DRINK_CAPACITY = 3
 
-    def __init__(self, num_kobukis, kobuki_state):
+    def __init__(self, num_kobukis, kobuki_state, bt1, bt2):
         self.next_id = 0
         self.num_kobukis = num_kobukis
         self.kobuki_state = kobuki_state
+        self.bt1 = bt1
+        self.bt2 = bt2
+
 
     def allocate(self):
         for i in range(len(self.kobuki_state)):
@@ -32,6 +37,8 @@ class OrderScheduler:
                     drink_num += 1
                     k_order.append(item)
                        
+                self.display(i, k_order)
+                #self.wait_for_delivery_press(i)
                 self.kobuki_state[i] = (RobotStatus.DELIVERING_ORDER, k_order, drink_num)
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
                 # TODO option to preempt if a higher priority order arrives. 
@@ -67,3 +74,23 @@ class OrderScheduler:
     def get_next_order(self):
         """Gets the next order to fulfill."""
         return self.queue.dequeue()
+    
+    def wait_for_delivery_press(self, kobuki_num): 
+        if not kobuki_num: 
+            pass
+        else: 
+            pass
+
+    def display(self,kobuki_num, order_list):
+        drink_list = []
+        for item in order_list: 
+            #print(item.order)
+            if not kobuki_num: 
+                self.bt1.display_drink(item.order)
+            else: 
+                self.bt2.display_drink(item.order)
+            time.sleep(2)
+
+        
+        
+        

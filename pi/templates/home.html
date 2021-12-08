@@ -5,7 +5,12 @@ function placeOrder(){
     const xhttp = new XMLHttpRequest();
     const name = document.getElementById("name").value;
     const table = document.getElementById("tableNum").value;
-    const order = document.getElementById("order").value;
+    //const order = document.getElementsByName("drink").value;
+    var ele = document.getElementsByName('drink');
+    for(i = 0; i < ele.length; i++) {
+        if(ele[i].checked)
+            const order = ele[i].value
+    }
     let query = `name=${name}&table-num=${table}&order=${order}`
     xhttp.open("GET", `/place-order?${query}`, true);
     xhttp.send(query);
@@ -20,9 +25,13 @@ function placeOrder(){
         <label for="tableNum">Table Number:</label>
         <input type="text" id="tableNum" name="tableNum"/>
         <br>
-        <label for="order">Your Order:</label>
-        <input type="text" id="order" name="order"/>
-        <br>
+        <label for="order">Your Order:</label><br>
+        <input type="radio" id="Water" name="drink" value="Water">
+        <label for="Water">Water</label><br>
+        <input type="radio" id="Orange Juice" name="drink" value="Orange Juice">
+        <label for="Orange Juice">Orange Juice</label><br>
+        <input type="radio" id="Beer" name="drink" value="Beer">
+        <label for="beer">Beer</label><br>
         <button onclick="placeOrder()">Submit Order</button>
     </div>
     <img src="/static/kobuki_drinks.png" alt="kobuki" width="500" 
