@@ -82,7 +82,7 @@ class Order:
         self.order_id = order_id
 
 class RobotStatus(Enum):
-    IDLE = 0
+    IDLE = 0 # At base station
     RETURNING = 1 # Going to the base station to wait for next order
     DELIVERING_ORDER = 2 # Bringing order to customer
     LOADING_UNLOADING = 3 # Order is being loaded onto or unloaded from robot

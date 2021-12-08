@@ -1,5 +1,5 @@
 from navigation import Navigation
-from customObjects import RobotStatus
+from customObjects import RobotStatus, Order
 from math import pi
 test_waypoints = [
     (5, 0),
@@ -31,6 +31,7 @@ def loop(data1):
             segment1
         ))
 
+# Test returning to base station
 traj = [
     (10, 10.1, -pi/2),
     (10, 10.1, -pi/2),
@@ -50,8 +51,32 @@ traj = [
     (5, 0, pi),
 ]
 
-# Test bench
+print("test returning to base station")
 kobuki_state[0] = (RobotStatus.PLAN_PATH_TO_BASE, [], 0)
+print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
+for xyt in traj:
+    data = {
+        "x": xyt[0],
+        "y": xyt[1],
+        "heading": xyt[2],
+    }
+    loop(data)
+
+# Test delivering order
+traj = [
+    (5, 1, 0),
+    (5, 0, 0),
+    (5, 2, 0),
+    (5, 5, 0.1),
+    (5, 5, -pi/2),
+    (4, 5, -pi/2),
+    (3, 4.5, -1.5),
+    (2, 5.1, -pi/2),
+    (-0.1, 5, -pi/2),
+    (0, 5, -pi/2),
+]
+print("test delivering order")
+kobuki_state[0] = (RobotStatus.PLAN_PATH_TO_TABLE, [Order("name", 2, 0, "water", 123)], 1)
 print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
 for xyt in traj:
     data = {
