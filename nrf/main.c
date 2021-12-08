@@ -2,22 +2,39 @@
 //
 // Creates a service for changing LED state over BLE
 
-//#include <stdbool.h>
 #include <stdint.h>
+#include "nrf_twi_mngr.h"
+#include "app_util.h"
+#include "app_error.h"
 #include "nrf.h"
 #include "nrf_delay.h"
-#include "app_util.h"
-#include "nrf_twi_mngr.h"
+#include "nrfx_gpiote.h"
 #include "nrf_gpio.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+#include "nrf_pwr_mgmt.h"
+#include "nrf_serial.h"
 #include "display.h"
 
-#include "simple_ble.h"
 #include "buckler.h"
+#include "kobukiActuator.h"
+#include "kobukiSensorTypes.h"
+#include "kobukiSensorPoll.h"
+#include "kobukiUtilities.h"
+
+#include "simple_ble.h"
 
 #include "max44009.h"
 
 // Project modules
 #include "motors.h"
+
+ typedef enum {
+  DRIVING,
+  TURNING
+} KobukiState_t;
+
 
 #define SCALE_FACTOR 100.00
 // Intervals for advertising and connections
@@ -32,15 +49,23 @@ static simple_ble_config_t ble_config = {
 };
 
 // 32e61089-2b22-4db5-a914-43ce41986c70
-static simple_ble_service_t led_service = {{
+static simple_ble_service_t generic_service = {{
     .uuid128 = {0x70,0x6C,0x98,0x41,0xCE,0x43,0x14,0xA9,
                 0xB5,0x4D,0x22,0x2B,0x89,0x10,0xE6,0x32}
 }};
 
-static simple_ble_char_t test_error_data = {.uuid16 = 0x108C};
+static simple_ble_char_t get_button_press = {.uuid16 = 0x108e};
+static simple_ble_char_t display_string_data = {.uuid16 = 0x108d};
+static simple_ble_char_t test_error_data = {.uuid16 = 0x108c};
 static simple_ble_char_t led1_state_char = {.uuid16 = 0x108b};
+
 static int led_state = 1;
+static uint8_t button_press[1];
 static uint8_t error_data[6];
+
+static unsigned char buf_disp[16] = "No Drink"; 
+//snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
+//display_write( buf, DISPLAY_LINE_1);
 
 /*******************************************************************************
  *   State for this applications
@@ -57,7 +82,22 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
       printf("Recovered positional error data: %f \n",pos_error);
       printf("Recovered heading error data: %f \n",head_error);
       motors_drive_correction(pos_error, head_error, remain_dist);
-     }
+    }
+    if (simple_ble_is_char_event(p_ble_evt, &display_string_data)) {
+      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
+      //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
+      display_write((char*)buf_disp, DISPLAY_LINE_1);
+    }
+    if (simple_ble_is_char_event(p_ble_evt, &get_button_press)) {
+      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
+      //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
+      char send_buf[16];
+      KobukiSensors_t initial_sensors;
+      kobukiSensorPoll(&initial_sensors);
+      button_press[0] = is_button_pressed(&initial_sensors);
+      snprintf(send_buf, 16,"Drinks placed"); 
+      display_write((char*)send_buf, DISPLAY_LINE_1);
+    }
     if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
       printf("Got write to LED characteristic!\n");
       if (led_state) {
@@ -67,14 +107,22 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
         printf("Turning off LED!\n");
         nrf_gpio_pin_set(BUCKLER_LED0);
       }
-      
     }
 }
 
 int main(void) {
 
   // Initialize
-  initKobuki();
+  kobukiInit();
+
+  // initialize RTT library
+  NRF_LOG_INIT(NULL);
+  NRF_LOG_DEFAULT_BACKENDS_INIT();
+  printf("Initialized RTT!\n");
+
+  KobukiState_t state = DRIVING;
+  KobukiSensors_t initial_sensors;
+  kobukiSensorPoll(&initial_sensors);
 
   // initialize display
   nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(1);
@@ -102,15 +150,28 @@ int main(void) {
   // Setup BLE
   simple_ble_app = simple_ble_init(&ble_config);
 
-  simple_ble_add_service(&led_service);
+  simple_ble_add_service(&generic_service);
 
   simple_ble_add_characteristic(1, 1, 0, 0,
+    sizeof(uint8_t),button_press,
+    &generic_service, &get_button_press);
+  
+  simple_ble_add_characteristic(1, 1, 0, 0,
       sizeof(uint8_t)*6, error_data,
-      &led_service, &test_error_data);
+      &generic_service, &test_error_data); //send 6 bytes, 2 bytes for each error 
 
   simple_ble_add_characteristic(1, 1, 0, 0,
       sizeof(led_state), (uint8_t*)&led_state,
-      &led_service, &led1_state_char);
+      &generic_service, &led1_state_char);
+
+  simple_ble_add_characteristic(1, 1, 0, 0,
+      sizeof(char)*16,buf_disp,
+      &generic_service, &display_string_data);
+
+
+
+
+
   // Start Advertising
   simple_ble_adv_only_name();
 

@@ -34,6 +34,11 @@ const float kp_dist = 1;
 volatile int left = 0;
 volatile int right = 0;
 
+ // initialize state
+
+
+
+
 void initKobuki(void) {
   kobukiInit();
 
