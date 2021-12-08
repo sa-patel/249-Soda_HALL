@@ -73,6 +73,7 @@ class Queue:
             print(" -> {",self.data[iter].order, "for", self.data[iter].name,"on Table", self.data[iter].table,"}",end="")
             iter += 1
         print("\n")
+        
 class Order:
     def __init__(self, name, table, priority, order, order_id):
         self.name = name

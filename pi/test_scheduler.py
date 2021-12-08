@@ -2,7 +2,7 @@ from customObjects import Queue, Order, RobotStatus
 from orderScheduler import OrderScheduler
 
 kobuki_state = [(RobotStatus.IDLE, [], 0), (RobotStatus.IDLE, [], 0)] # 2-tuple (STATE, Order) for each robot
-scheduler = OrderScheduler(2, kobuki_state)
+scheduler = OrderScheduler(2, kobuki_state,0,0)
 
 scheduler.create("Amit",1,"Gin",0)
 scheduler.create("Zak",2,"Rum",0)
@@ -21,10 +21,10 @@ print("First kobuki: ", kobuki_state[0])
 print("Second kobuki: ", kobuki_state[1])
 
 scheduler.queue.print_queue()
-
 #once we return to idle from delivered drinks, must clear out scheduler class variables
-kobuki_state = [(RobotStatus.IDLE, [], 0), (RobotStatus.IDLE, [], 0)] # 2-tuple (STATE, Order) for each robot
-scheduler.__init__(2,kobuki_state)
+kobuki_state[0] = (RobotStatus.IDLE, [], 0)
+kobuki_state[1] = (RobotStatus.IDLE, [], 0) # 2-tuple (STATE, Order) for each robot
+#scheduler.__init__(2,kobuki_state)
 scheduler.allocate()
 print("First kobuki: ", kobuki_state[0])
 print("Second kobuki: ", kobuki_state[1])

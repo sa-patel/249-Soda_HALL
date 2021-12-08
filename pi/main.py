@@ -30,7 +30,7 @@ bt1.connect_sim()
 bt2.connect_sim()
 
 webcam = Webcam()
-scheduler = OrderScheduler(2, kobuki_state)
+scheduler = OrderScheduler(2, kobuki_state, bt1, bt2)
 NUM_KOBUKIS = 2
 nav = Navigation(NUM_KOBUKIS, kobuki_state)
 LOOP = 0.25 # Period, in seconds, of the main loop.
