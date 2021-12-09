@@ -2,48 +2,100 @@
 Plans the routes for each robot and keeps the robots on their track.
 """
 
-"""waypoints:
-     1       2    9   10    3       4
-     _________              _________
-    |         |            |         |
-    |_________|            |_________|
-     5        6   11  12    7        8
+"""
+Waypoints:
 
+C = Corner
+X = Intermediate waypoint
+B = Base station
+
+  C           C---X---X---C           C
+  | ╔═════════╗   |   |   ╔═════════╗ |
+  | ║         ║   |   |   ║         ║ |
+  | ╚═════════╝   |   |   ╚═════════╝ |
+  C-----------C---X---X---C-----------C
+                   \ /
+                    B
+
+Waypoint IDs:
+
+  1           2---3---4---5           6
+  | ╔═════════╗   |   |   ╔═════════╗ |
+  | ║         ║   |   |   ║         ║ |
+  | ╚═════════╝   |   |   ╚═════════╝ |
+  7-----------8---9---10--11----------12
+                   \ /
                     0
 
-    table numbers:
-     _________              _________
-    |0       1|            |4       5|
-    |2_______3|            |6_______7|
+Seat numbers:
+    ╔═════════╗           ╔═════════╗
+    ║ 1     2 ║           ║5       6║
+    ║ 3     4 ║           ║7       8║
+    ╚═════════╝           ╚═════════╝
 """
 # External libraries
-from math import pi
+import math
 
 # Project modules
 from customObjects import Segment, RobotStatus, Waypoint
 
+class NavGraph:
+    def __init__(self):
+        # The graph is represented by an adjacency list,
+        # which in Python is a dictionary mapping waypoints
+        # to a list of other waypoints it's connected to
+        self.adj_list = dict()
+        self.locking_groups = []
 
-norm_sq = lambda x, y: x**2 + y**2
+    def add_node(self, w):
+        # We use a list here to ensure consistent iteration order
+        self.adj_list[w] = []
 
-class Graph:
-    def __init__(self, n):
-        self.adj = [set([]) for _ in range(n)]
-    def add_edge(self, a, b):
-        self.adj[a].add(b)
-        self.adj[b].add(a)
-    def bfs_route(self, a, b):
-        """Find route of waypoints from a to b."""
-        visited = [a]
-        queue = [(a, [])]
-        while queue:
-            visit, history = queue.pop()
-            if visit == b:
-                return history+[b]
-            for i in self.adj[visit]:
-                if i not in visited:
-                    visited.append(i)
-                    queue.append((i, history+[visit]))
-        return None # No route found
+    def connect_nodes(self, waypoints):
+        for w1, w2 in waypoints:
+            if not self.adj_list.get(w1) or not self.adj_list.get(w2):
+                raise Exception("Waypoints not found in graph!")
+
+            self.adj_list[w1].append(w2)
+            self.adj_list[w2].append(w1)
+
+    def find_route(self, start, endpoints):
+        """
+        Calculates the shortest path from START to any
+        of the waypoints in ENDPOINTS and returns
+        the next hop in that path.
+        """
+        if start in endpoints:
+            raise ValueError("START cannot also be in ENDPOINTS")
+
+        visited = {}
+        paths = [[start]]
+        new_paths = []
+        found = False
+
+        while paths:
+            path = paths.pop(0)
+            end_node = path[-1]
+
+            for neighbor in self.adj_list[end_node]:
+                if neighbor not in visited:
+                    new_path = path + [neighbor]
+
+                    if neighbor in endpoints:
+                        print("Path found:", new_path) # Debug
+                        # Return the second node, which is the
+                        # node connected to the starting point
+                        return new_path
+
+                    new_paths.append(new_path)
+
+            visited.add(end_node)
+            paths = new_paths
+            new_paths = []
+
+        # If we could not find a valid path, we should just stall
+        return None
+
 class Navigation:
     all_edges = (
         (0, 11),
@@ -71,7 +123,7 @@ class Navigation:
 
     # Constants
     NUM_WAYPOINTS = 13
-    DISTANCE_EPSILON = 0.15**2 # meters squared
+    DISTANCE_EPSILON = 0.15 # meters
     ALMOST_ZERO = 0.06**2
     def __init__(self, num_kobukis, kobuki_state, waypoint_locations = None):
         assert(len(kobuki_state) >= num_kobukis)
@@ -81,7 +133,7 @@ class Navigation:
         self.current_segment = [None for _ in range(self.num_kobukis)]
 
         # Build the navigation graph
-        self.graph = Graph(self.NUM_WAYPOINTS)
+        self.graph = NavGraph(self.NUM_WAYPOINTS)
         for a, b in self.all_edges:
             self.graph.add_edge(a, b)
 
@@ -104,7 +156,7 @@ class Navigation:
         heading_error = heading - desired_segment.segment_angle()
         if heading_error > pi:
             heading_error -= 2*pi
-        remaining_dist = norm_sq(x2-x, y2-y)**0.5
+        remaining_dist = math.dist([x, y], [x2, y2])
         segment_length = desired_segment.length_squared()**0.5
         if segment_length < self.ALMOST_ZERO:
             print("Error: segment length near zero")
@@ -132,7 +184,7 @@ class Navigation:
 
     def point_reached(self, x, y, x2, y2):
         """Returns true if the points are within epsilon distance of each other"""
-        dist_sq = norm_sq(x - x2, y - y2)
+        dist_sq = math.dist([x, y], [x2, y2])
         return dist_sq < self.DISTANCE_EPSILON
     
     def get_desired_segment(self, kobuki_id, webcam_data):
@@ -231,7 +283,7 @@ class Navigation:
                 min_dist_sq = dist_sq
                 nearest = i
         return nearest
-    
+
     def convert_waypoints_to_segment(self, a, b):
         """Take 2 waypoints and create a Segment"""
         def waypoint_to_coordinate(p):
@@ -244,7 +296,7 @@ class Navigation:
         xb, yb = waypoint_to_coordinate(b)
         s = Segment(xa, ya, xb, yb)
         return s
-        
+
     def lookup_waypoint(self, p):
         """Find coordinates of waypoint given by its id"""
         return self.waypoint_locations[p]
