@@ -11,7 +11,9 @@ Plans the routes for each robot and keeps the robots on their track.
 
                     0
 
-    table numbers:
+    seat / table numbers:
+
+      table 0                table 1
      _________              _________
     |0       1|            |4       5|
     |2_______3|            |6_______7|
@@ -65,7 +67,7 @@ class Navigation:
         # Index is waypoint id. Value is (x,y) tuple.
         # TODO fill this in once environment is defined.
     ]
-    table_to_waypoint = [ # Index is table number. Value is waypoint id.
+    seat_to_waypoint = [ # Index is seat number. Value is waypoint id.
         1, 2, 5, 6, 3, 4, 7, 8
     ]
 
@@ -179,12 +181,12 @@ class Navigation:
             self.route[kobuki_id-1] = [] # Clear any saved routes
             x0 = webcam_data["x"]
             y0 = webcam_data["y"]
-            dest = self.convert_table_to_waypoint(order.pop(0).table)
+            dest = self.convert_seat_to_waypoint(order.pop(0).seat)
             self.plan_path(kobuki_id, x0, y0, dest) # Point 0 is base station.
             self.kobuki_state[kobuki_id-1] = [RobotStatus.DELIVERING_ORDER, order, num_drinks]
             return advance_segment_check_state(RobotStatus.LOADING_UNLOADING)
         elif state == RobotStatus.DELIVERING_ORDER:
-            # Drive the path to get the order to the table.
+            # Drive the path to get the order to the seat.
             if current_segment is None:
                 return advance_segment_check_state(RobotStatus.LOADING_UNLOADING)
             else:
@@ -249,9 +251,9 @@ class Navigation:
         """Find coordinates of waypoint given by its id"""
         return self.waypoint_locations[p]
     
-    def convert_table_to_waypoint(self, table):
-        """Convert table number to waypoint number"""
-        return self.table_to_waypoint[table]
+    def convert_seat_to_waypoint(self, seat):
+        """Convert seat number to waypoint number"""
+        return self.seat_to_waypoint[seat]
     
     def route_print(self, kobuki_id):
         """Testing function to print the route"""

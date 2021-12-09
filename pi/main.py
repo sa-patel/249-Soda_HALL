@@ -22,12 +22,12 @@ bt1 = BluetoothController(1)
 bt2 = BluetoothController(2)
 
 # Connect to nrf bluetooth
-# bt1.connect()
-# bt2.connect()
+bt1.connect()
+bt2.connect()
 
 # Simulate bluetooth connection when testing without nrf
-bt1.connect_sim()
-bt2.connect_sim()
+# bt1.connect_sim()
+# bt2.connect_sim()
 
 webcam = Webcam()
 scheduler = OrderScheduler(2, kobuki_state, bt1, bt2)

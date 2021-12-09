@@ -9,9 +9,10 @@ class BluetoothController:
         self.SRV_ID = "32e61089-2b22-4db5-a914-43ce41986c70"
         self.CHAR_DRIVE_ID = "32e6108c-2b22-4db5-a914-43ce41986c70"
         self.CHAR_DISP_ID = "32e6108d-2b22-4db5-a914-43ce41986c70"
+        self.CHAR_BUTTON_ID = "32e6108e-2b22-4db5-a914-43ce41986c70"
         self.kobuki_channel = 0
         if self.device_id == 1:
-            self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#1
+            self.UUID_ADDR = "C0:98:e5:49:00:01" #kobuki#1
         else: 
             self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#2
 
@@ -22,7 +23,7 @@ class BluetoothController:
         sv = kobuki_controller.getServiceByUUID(self.SRV_ID)
         self.kobuki_channel = sv.getCharacteristics(self.CHAR_DRIVE_ID)[0]
         self.kobuki_display = sv.getCharacteristics(self.CHAR_DISP_ID)[0]
-        
+        self.kobuki_button = sv.getCharacteristics(self.CHAR_BUTTON_ID)[0]
 
     def connect_sim(self):
         # Use this for testing without bluetooth
@@ -62,7 +63,9 @@ class BluetoothController:
 
     def receive_button_press(self):
         # TODO receive bluetooth data from kobuki
-        return 0
+        self.kobuki_press.write(bytes(0))
+        button_state = bool(int(self.kobuki_press.read().hex()))
+        return button_state
 
     def display_drink(self,drink): 
         self.kobuki_display.write(bytes(drink, 'utf-8'))

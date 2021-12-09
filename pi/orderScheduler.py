@@ -38,8 +38,10 @@ class OrderScheduler:
                     k_order.append(item)
                        
                 self.display(i, k_order)
-                #self.wait_for_delivery_press(i)
+                self.wait_for_delivery_press(i)
                 self.kobuki_state[i] = (RobotStatus.DELIVERING_ORDER, k_order, drink_num)
+            elif state == RobotStatus.LOADING_UNLOADING:
+                self.wait_for_delivery_press(i)
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
                 # TODO option to preempt if a higher priority order arrives. 
                 
@@ -53,13 +55,14 @@ class OrderScheduler:
                 
         return None
 
-    def create(self, customer, table, order, priority):
+    def create(self, customer, seat, order, priority):
         """Create an order with the given paramters. Add to queue.
         Returns SUCCESS, order_id if the order was added, where order_id is a
         unique order identifier.        """
         id = self.next_id
         self.next_id += 1
-        order = Order(customer, table, priority, order, id)
+        table = 0 if seat < 4 else 1
+        order = Order(customer, seat, table, priority, order, id)
         self.queue.enqueue(order)
         return id
 
@@ -76,10 +79,22 @@ class OrderScheduler:
         return self.queue.dequeue()
     
     def wait_for_delivery_press(self, kobuki_num): 
-        if not kobuki_num: 
-            pass
-        else: 
-            pass
+        if kobuki_num == 0:
+            bt = self.bt1
+        else:
+            bt = self.bt2
+        if self.bt1.receive_button_press():
+            # Button was pressed. Update the state.
+            state, orders, _ = self.kobuki_state[kobuki_num]
+            if state == RobotStatus.IDLE and len(orders) > 0:
+                state = RobotStatus.PLAN_PATH_TO_TABLE
+            elif state == RobotStatus.LOADING_UNLOADING:
+                if len(orders) > 0:
+                    # Deliver the next order.
+                    state = RobotStatus.PLAN_PATH_TO_TABLE
+                else:
+                    # Return to base.
+                    state = RobotStatus.PLAN_PATH_TO_BASE
 
     def display(self,kobuki_num, order_list):
         drink_list = []

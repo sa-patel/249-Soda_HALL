@@ -75,8 +75,9 @@ class Queue:
         print("\n")
         
 class Order:
-    def __init__(self, name, table, priority, order, order_id):
+    def __init__(self, name, seat, table, priority, order, order_id):
         self.name = name
+        self.seat = seat
         self.table = table
         self.priority = priority
         self.order = order
