@@ -91,7 +91,7 @@ for xyt in traj:
     loop(data)
 
 # Deliver the second order
-assert kobuki_state[0][0] == RobotStatus.LOADING_UNLOADING
+assert kobuki_state[0][0] == RobotStatus.UNLOADING
 print(kobuki_state[0])
 kobuki_state[0][0] = RobotStatus.PLAN_PATH_TO_TABLE
 traj = [

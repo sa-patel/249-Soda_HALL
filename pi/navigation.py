@@ -152,7 +152,7 @@ class Navigation:
         if state == RobotStatus.IDLE:
             # stop the motors.
             return None
-        if state == RobotStatus.LOADING_UNLOADING:
+        if state == RobotStatus.UNLOADING:
             # TODO handle a button press and advance to the next state
             # stop the motors.
             return None
@@ -184,11 +184,11 @@ class Navigation:
             dest = self.convert_seat_to_waypoint(order.pop(0).seat)
             self.plan_path(kobuki_id, x0, y0, dest) # Point 0 is base station.
             self.kobuki_state[kobuki_id-1] = [RobotStatus.DELIVERING_ORDER, order, num_drinks]
-            return advance_segment_check_state(RobotStatus.LOADING_UNLOADING)
+            return advance_segment_check_state(RobotStatus.UNLOADING)
         elif state == RobotStatus.DELIVERING_ORDER:
             # Drive the path to get the order to the seat.
             if current_segment is None:
-                return advance_segment_check_state(RobotStatus.LOADING_UNLOADING)
+                return advance_segment_check_state(RobotStatus.UNLOADING)
             else:
                 # Determine the current segment.
                 x0 = webcam_data["x"]
@@ -196,7 +196,7 @@ class Navigation:
                 xf = current_segment.xf
                 yf = current_segment.yf
                 if self.point_reached(x0, y0, xf, yf):
-                    return advance_segment_check_state(RobotStatus.LOADING_UNLOADING)
+                    return advance_segment_check_state(RobotStatus.UNLOADING)
                 return current_segment
         else:
             print("navigation state not implemented")

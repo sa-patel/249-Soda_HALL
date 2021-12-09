@@ -28,6 +28,8 @@ class BluetoothController:
     def connect_sim(self):
         # Use this for testing without bluetooth
         self.kobuki_channel = None
+        self.kobuki_display = None
+        self.kobuki_button = None
 
     def transmit(self):
         led_state = bool(int(self.kobuki_channel.read().hex()))
@@ -62,10 +64,16 @@ class BluetoothController:
         # TODO
 
     def receive_button_press(self):
-        # TODO receive bluetooth data from kobuki
-        self.kobuki_button.write(bytes(0))
-        button_state = bool(int(self.kobuki_button.read().hex()))
-        return button_state
+        # Receive bluetooth data from kobuki
+        if self.kobuki_button is not None:
+            self.kobuki_button.write(bytes(0))
+            button_state = bool(int(self.kobuki_button.read().hex()))
+            return button_state
+        # Simulation:
+        return input("Button press {}? ".format(self.device_id))
 
-    def display_drink(self,drink): 
-        self.kobuki_display.write(bytes(drink, 'utf-8'))
+    def display_drink(self,drink):
+        if self.kobuki_display is not None:
+            self.kobuki_display.write(bytes(drink, 'utf-8'))
+        else:
+            print("Kobuki {} display: {}".format(self.device_id, drink))

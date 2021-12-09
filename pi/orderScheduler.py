@@ -41,9 +41,9 @@ class OrderScheduler:
                 self.kobuki_state[i][0] = RobotStatus.LOADING
             elif state == RobotStatus.LOADING: 
                 self.wait_for_delivery_press(i)
-                #self.kobuki_state[i] = [RobotStatus.DELIVERING_ORDER, k_order, drink_num]
-            elif state == RobotStatus.LOADING_UNLOADING:
+            elif state == RobotStatus.UNLOADING:
                 self.wait_for_delivery_press(i)
+            # TODO make 2 states loading and unloading
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
                 # TODO option to preempt if a higher priority order arrives. 
                 
@@ -92,7 +92,7 @@ class OrderScheduler:
             state, orders, _ = self.kobuki_state[kobuki_num]
             if state == RobotStatus.LOADING and len(orders) > 0:
                 state = RobotStatus.PLAN_PATH_TO_TABLE
-            elif state == RobotStatus.LOADING_UNLOADING:
+            elif state == RobotStatus.UNLOADING:
                 if len(orders) > 0:
                     # Deliver the next order.
                     state = RobotStatus.PLAN_PATH_TO_TABLE

@@ -39,8 +39,6 @@ def loop():
     data = webcam.get_data()
     data1 = data["kobuki1"]
     data2 = data["kobuki2"]
-    bt_data1 = bt1.receive()
-    bt_data2 = bt2.receive()
     scheduler.allocate()
     segment1 = nav.get_desired_segment(1, data1)
     if segment1 is None:
