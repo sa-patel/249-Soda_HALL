@@ -88,6 +88,7 @@ class RobotStatus(Enum):
     RETURNING = 1 # Going to the base station to wait for next order
     DELIVERING_ORDER = 2 # Bringing order to customer
     LOADING_UNLOADING = 3 # Order is being loaded onto or unloaded from robot
+    LOADING = 6
     PLAN_PATH_TO_BASE = 4
     PLAN_PATH_TO_TABLE = 5
 

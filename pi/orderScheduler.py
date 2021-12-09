@@ -38,8 +38,10 @@ class OrderScheduler:
                     k_order.append(item)
                        
                 self.display(i, k_order)
-                self.wait_for_delivery_press(i)
-                self.kobuki_state[i] = (RobotStatus.DELIVERING_ORDER, k_order, drink_num)
+                self.kobuki_state[i][0] = RobotStatus.LOADING
+            elif state == RobotStatus.LOADING: 
+                if self.wait_for_delivery_press(i):
+                    self.kobuki_state[i] = [RobotStatus.DELIVERING_ORDER, k_order, drink_num]
             elif state == RobotStatus.LOADING_UNLOADING:
                 self.wait_for_delivery_press(i)
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
