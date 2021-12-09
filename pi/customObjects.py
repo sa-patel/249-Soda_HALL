@@ -91,9 +91,8 @@ class RobotStatus(Enum):
     PLAN_PATH_TO_TABLE = 5
 
 class Waypoint:
-    def __init__(self, typ, id, coords):
-        self.typ = typ # "PREDEFINED" or "XY"
-        self.id = id
+    def __init__(self, ident, coords):
+        self.ident = ident
         self.coords = coords
         self.lock_holder = None
         self.locking_group = self.id

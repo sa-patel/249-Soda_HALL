@@ -39,6 +39,26 @@ import math
 # Project modules
 from customObjects import Segment, RobotStatus, Waypoint
 
+BASE_STATION_ID = 0
+
+WAYPOINT_EDGES = [
+    (0, 9), (0, 10), (1, 7), (7, 8),
+    (8, 9), (9, 3), (9, 10), (3, 2),
+    (3, 4), (4, 5), (10, 11), (11, 12),
+    (12, 6),
+]
+
+SEAT_NO_TO_WAYPOINT_ID = {
+    1: 1,
+    2: 2,
+    3: 7,
+    4: 8,
+    5: 5,
+    6: 6,
+    7: 11,
+    8: 12,
+}
+
 class NavGraph:
     def __init__(self):
         # The graph is represented by an adjacency list,
@@ -51,13 +71,12 @@ class NavGraph:
         # We use a list here to ensure consistent iteration order
         self.adj_list[w] = []
 
-    def connect_nodes(self, waypoints):
-        for w1, w2 in waypoints:
-            if not self.adj_list.get(w1) or not self.adj_list.get(w2):
-                raise Exception("Waypoints not found in graph!")
+    def connect_nodes(self, w1, w2):
+        if not self.adj_list.get(w1) or not self.adj_list.get(w2):
+            raise Exception("Waypoints not found in graph!")
 
-            self.adj_list[w1].append(w2)
-            self.adj_list[w2].append(w1)
+        self.adj_list[w1].append(w2)
+        self.adj_list[w2].append(w1)
 
     def find_route(self, start, endpoints):
         """
@@ -186,7 +205,7 @@ class Navigation:
         """Returns true if the points are within epsilon distance of each other"""
         dist_sq = math.dist([x, y], [x2, y2])
         return dist_sq < self.DISTANCE_EPSILON
-    
+
     def get_desired_segment(self, kobuki_id, webcam_data):
         assert(0 < kobuki_id and kobuki_id <= self.num_kobukis)
         current_segment = self.current_segment[kobuki_id-1]
