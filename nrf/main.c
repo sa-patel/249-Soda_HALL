@@ -249,13 +249,16 @@ int main(void) {
         break;
       } 
       case DELIVERING_ORDER: 
-      case RETURNING: 
+      case RETURNING:
+        g_button_pressed = 0;
         drive();
         break;
       case PLAN_PATH_TO_BASE:
       case PLAN_PATH_TO_TABLE: 
-      case IDLE: 
-      default: 
+      case IDLE:
+        g_button_pressed = 0; 
+      default:
+        g_button_pressed = 0;
         //nrf_delay_ms(250);somehow this f**ks up everthing
         break; 
     }
