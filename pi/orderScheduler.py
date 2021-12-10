@@ -27,7 +27,7 @@ class OrderScheduler:
             if state == RobotStatus.IDLE:
                 # Assign next order to robot
                 order = self.get_next_order()
-                if order is not None and drink_num < self.MAX_DRINK_CAPACITY: 
+                if order is not None and drink_num < self.MAX_DRINK_CAPACITY:
                     cur_table = order.table
                     drink_num += 1
                     k_order.append(order)

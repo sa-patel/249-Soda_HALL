@@ -10,50 +10,65 @@ import time
 import threading
 
 # Project modules
-from navigation import Navigation
+from navigation import NavGraph, WAYPOINTS, WAYPOINT_EDGES
 from bluetooth import BluetoothController
 from webcam import Webcam
 from orderScheduler import OrderScheduler
 from customObjects import RobotStatus
 import server
 
-kobuki_state = [[RobotStatus.IDLE, [], 0], [RobotStatus.IDLE, [], 0]] # 3-list [STATE, Orders, NUM_DRINKS] for each robot
-bt1 = BluetoothController(1)
-bt2 = BluetoothController(2)
-
-# Connect to nrf bluetooth
-bt1.connect()
-bt2.connect()
-
-# Simulate bluetooth connection when testing without nrf
-# bt1.connect_sim()
-# bt2.connect_sim()
-
-webcam = Webcam()
-scheduler = OrderScheduler(2, kobuki_state, bt1, bt2)
+LOOP_PERIOD = 0.25 # Period, in seconds, of the main loop.
 NUM_KOBUKIS = 2
-nav = Navigation(NUM_KOBUKIS, kobuki_state)
-LOOP = 0.25 # Period, in seconds, of the main loop.
 
-def loop():
-    data = webcam.get_data()
-    data1 = data["kobuki1"]
-    data2 = data["kobuki2"]
-    scheduler.allocate()
-    segment1 = nav.get_desired_segment(1, data1)
-    if segment1 is None:
-        # Stop driving
-        bt1.transmit_nav(0, 0, 0)
-    else:
-        positional_error1, heading_error1, remaining_dist1 = nav.get_error_terms(data1["x"], data1["y"], data1["heading"], segment1)
-        bt1.transmit_nav(positional_error1, heading_error1, remaining_dist1)
+def main_loop():
+    bt1 = BluetoothController(1)
+    bt2 = BluetoothController(2)
 
-def loop_entry():
+    # Connect to nrf bluetooth
+    # bt1.connect()
+    # bt2.connect()
+
+    # Simulate bluetooth connection when testing without nrf
+    bt1.connect_sim()
+    bt2.connect_sim()
+
+    webcam = Webcam()
+
+    coords = webcam.get_static_data()
+    #waypoints = [Waypoint(i, coords[i]) for i in range(13)]
+    waypoints = [Waypoint(i, (100.0, 100.0)) for i in range(13)]
+
+    nav_graph = NavGraph()
+    for w_i in WAYPOINTS:
+        nav_graph.add_node(waypoints[w_i])
+    for w_i, w_j in WAYPOINT_EDGES:
+        nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
+
+    waiter1 = KobukiRobot(1, nav_graph)
+    waiter2 = KobukiRobot(2, nav_graph)
+    waiter1.set_home = waypoints[BASE_STATION_ID]
+    waiter2.set_home = waypoints[BASE_STATION_ID]
+
     while True:
-        loop()
-        time.sleep(LOOP)
+        data = webcam.get_data()
+        data1 = data["kobuki1"]
+        data2 = data["kobuki2"]
+
+        bt_data1 = bt1.receive()
+        bt_data2 = bt2.receive()
+
+        # TODO: Push the button on the Kobuki if the bt tells us to
+
+        scheduler.allocate()
+
+        waiter1.update(data1)
+        waiter2.update(data2)
+        bt1.transmit_nav(*waiter1.get_heading())
+        bt2.transmit_nav(*waiter1.get_heading())
+
+        time.sleep(LOOP_PERIOD)
 
 if __name__ == "__main__":
-    loop_thread = threading.Thread(target=loop_entry)
+    loop_thread = threading.Thread(target=main_loop)
     loop_thread.start()
     server.start(scheduler)

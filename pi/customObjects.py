@@ -40,7 +40,7 @@ class Queue:
         
         # List is empty.
         return None
-    
+
     def search_item_queue(self,table):
         iter = self.tail
         while iter != self.head:
@@ -66,14 +66,14 @@ class Queue:
         self.size -=1
         return self.data.pop(index_table)
 
-    def print_queue(self): 
+    def print_queue(self):
         iter = self.tail
         print("Tail ",end="")
         while iter != self.head:
             print(" -> {",self.data[iter].order, "for", self.data[iter].name,"on Table", self.data[iter].table,"}",end="")
             iter += 1
         print("\n")
-        
+
 class Order:
     def __init__(self, name, seat, table, priority, order, order_id):
         self.name = name
@@ -93,10 +93,19 @@ class RobotStatus(Enum):
     PLAN_PATH_TO_TABLE = 5
 
 class Waypoint:
-    type = None # "PREDEFINED" or "XY"
-    value = None
-    def __init__(self, type, value):
-        self.type = type
-        self.value = value
-    def __str__(self):
-        return "{} {};".format(self.type, self.value)
+    def __init__(self, ident, coords):
+        self.ident = ident
+        self.coords = coords
+        self.lock_holder = None
+        self.locking_group = self.id
+
+    def try_lock(self, robot_id):
+        if self.lock_holder is None:
+            self.lock_holder = robot_id
+            return True
+        else:
+            return False
+
+    def __repr__(self):
+        return "Waypoint {}: typ={}; coords={}; lock_holder={}".format(self.id, \
+            self.typ, self.coords, self.lock_holder)
