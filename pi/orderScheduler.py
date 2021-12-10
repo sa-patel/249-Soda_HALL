@@ -6,56 +6,41 @@ Implements scheduling algorithm to receive and schedule customer orders
 from customObjects import Queue, Order, RobotStatus
 from bluetooth import BluetoothController
 import time
+from waiter import KobukiRobot
+from navigation import SEAT_NO_TO_WAYPOINT_ID
 
 class OrderScheduler:
     SUCCESS = 0
     ID_NOT_FOUND = 1
-    queue = Queue()
     MAX_DRINK_CAPACITY = 3
 
-    def __init__(self, num_kobukis, kobuki_state, bt1, bt2):
-        self.next_id = 0
-        self.num_kobukis = num_kobukis
-        self.kobuki_state = kobuki_state
-        self.bt1 = bt1
-        self.bt2 = bt2
-
+    def __init__(self, kobukis, waypoints):
+        self.kobukis = kobukis
+        self.queue = Queue()
+        self.waypoints = waypoints
 
     def allocate(self):
-        for i in range(len(self.kobuki_state)):
-            state, k_order, drink_num = self.kobuki_state[i]
-            if state == RobotStatus.IDLE:
-                # Assign next order to robot
-                order = self.get_next_order()
-                if order is not None and drink_num < self.MAX_DRINK_CAPACITY:
-                    cur_table = order.table
-                    drink_num += 1
-                    k_order.append(order)
-
-                    same_table_orders = self.queue.search_items_queue(cur_table,self.MAX_DRINK_CAPACITY - drink_num)
-                    for item in same_table_orders:
-                        drink_num += 1
-                        k_order.append(item)
-                       
-                    self.display(i, k_order)
-                    self.kobuki_state[i][0] = RobotStatus.LOADING
-                else:
-                    # No orders in queue. Remain idle.
-                    pass
-            elif state == RobotStatus.LOADING: 
-                self.wait_for_delivery_press(i)
-            elif state == RobotStatus.UNLOADING:
-                self.wait_for_delivery_press(i)
-            # TODO make 2 states loading and unloading
-            elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
-                # TODO option to preempt if a higher priority order arrives. 
-                
-                pass
-            else:
-                # The scheduler does not operate on other states.
-                pass
-                
-        return None
+        for k in self.kobukis:
+            if k.getStatus() == RobotStatus.LOADING:
+                # # Without table prioritization
+                # while k.get_num_drinks() < KobukiRobot.MAX_DRINK_CAPACITY:
+                #     next_order = self.get_next_order()
+                #     if next_order:
+                #         wid = SEAT_NO_TO_WAYPOINT_ID[next_order.seat]
+                #         k.place_drink(next_order.name, self.waypoints[wid])
+                while k.get_num_drinks() < KobukiRobot.MAX_DRINK_CAPACITY:
+                    next_order = self.get_next_order()
+                    if next_order is None:
+                        break
+                    
+                    wid = SEAT_NO_TO_WAYPOINT_ID[next_order.seat]
+                    k.place_drink(next_order.name, self.waypoints[wid])
+                    cur_table = next_order.table
+                    # Find additional orders
+                    same_table_orders = self.queue.search_items_queue(cur_table,self.MAX_DRINK_CAPACITY - k.get_num_drinks())
+                    for order in same_table_orders:
+                        wid = SEAT_NO_TO_WAYPOINT_ID[next_order.seat]
+                        k.place_drink(order.name, self.waypoints[wid])
 
     def create(self, customer, seat, order, priority):
         """Create an order with the given paramters. Add to queue.
@@ -80,7 +65,7 @@ class OrderScheduler:
         """Gets the next order to fulfill."""
         return self.queue.dequeue()
     
-    def wait_for_delivery_press(self, kobuki_num): 
+    def wait_for_delivery_press(self, kobuki_num):
         if kobuki_num == 0:
             bt = self.bt1
         else:

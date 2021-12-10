@@ -8,17 +8,36 @@ python3 main.py
 # External libraries
 import time
 import threading
+from orderScheduler import OrderScheduler
 
 # Project modules
-from navigation import NavGraph, WAYPOINTS, WAYPOINT_EDGES
+from navigation import *
 from bluetooth import BluetoothController
 from webcam import Webcam
 from orderScheduler import OrderScheduler
-from customObjects import RobotStatus
+from customObjects import Waypoint
+from waiter import KobukiRobot
 import server
 
 LOOP_PERIOD = 0.25 # Period, in seconds, of the main loop.
 NUM_KOBUKIS = 2
+
+webcam = Webcam()
+coords = webcam.get_static_data()
+waypoints = [Waypoint(i, (100.0, 100.0)) for i in range(NUM_WAYPOINTS)]
+nav_graph = NavGraph()
+
+for w_i in waypoints:
+    nav_graph.add_node(waypoints[w_i])
+for w_i, w_j in WAYPOINT_EDGES:
+    nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
+
+waiter1 = KobukiRobot(1, nav_graph)
+waiter2 = KobukiRobot(2, nav_graph)
+waiter1.set_home = waypoints[BASE_STATION_ID]
+waiter2.set_home = waypoints[BASE_STATION_ID]
+
+scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 
 def main_loop():
     bt1 = BluetoothController(1)
@@ -31,33 +50,20 @@ def main_loop():
     # Simulate bluetooth connection when testing without nrf
     bt1.connect_sim()
     bt2.connect_sim()
-
-    webcam = Webcam()
-
-    coords = webcam.get_static_data()
     #waypoints = [Waypoint(i, coords[i]) for i in range(13)]
-    waypoints = [Waypoint(i, (100.0, 100.0)) for i in range(13)]
-
-    nav_graph = NavGraph()
-    for w_i in WAYPOINTS:
-        nav_graph.add_node(waypoints[w_i])
-    for w_i, w_j in WAYPOINT_EDGES:
-        nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
-
-    waiter1 = KobukiRobot(1, nav_graph)
-    waiter2 = KobukiRobot(2, nav_graph)
-    waiter1.set_home = waypoints[BASE_STATION_ID]
-    waiter2.set_home = waypoints[BASE_STATION_ID]
 
     while True:
         data = webcam.get_data()
         data1 = data["kobuki1"]
         data2 = data["kobuki2"]
 
-        bt_data1 = bt1.receive()
-        bt_data2 = bt2.receive()
+        button1 = bt1.receive_button_press()
+        button2 = bt2.receive_button_press()
 
-        # TODO: Push the button on the Kobuki if the bt tells us to
+        if button1:
+            waiter1.push_button()
+        if button2:
+            waiter2.push_button()
 
         scheduler.allocate()
 
