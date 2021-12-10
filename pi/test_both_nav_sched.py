@@ -5,6 +5,9 @@ from customObjects import RobotStatus
 from math import pi, sin, cos
 from random import gauss
 from time import sleep
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
 test_waypoints = [
     (5, 0),
     (0, 10),
@@ -57,6 +60,11 @@ header_format_string = "{:28}{:6}{:6}{:9}{:>20} {:28}{:6}{:6}{:9}{:>20}"
 xL, xU = -2, 12
 yL, yU = -2, 12
 
+x1 = []
+y1 = []
+x2 = []
+y2 = []
+
 def loop():
     data1 = data["kobuki1"]
     data2 = data["kobuki2"]
@@ -95,6 +103,10 @@ def loop():
             kobuki_state[1][0], data2["x"], data2["y"], data2["heading"], 
             segment2.__str__(),
         ))
+    x1.append(data1["x"])
+    x2.append(data2["x"])
+    y1.append(data1["y"])
+    y2.append(data2["y"])
 
 
 
@@ -118,3 +130,31 @@ while scheduler.queue.size > 0 or prev_idles < 5:
     else:
         prev_idles = 0
     # sleep(0.1)
+
+fig = plt.figure()
+ax = fig.add_subplot(xlim = (-1, 11), ylim = (-1, 11))
+history1=[[],[]]
+history2=[[],[]]
+travel_line = [ax.plot([], [], 'bg'[i])[0] for i in range(NUM_KOBUKIS)]
+bots = [ax.plot([], [], 'bg'[i]+'o')[0] for i in range(NUM_KOBUKIS)]
+
+def update(i):
+    history1[0].append(x1[i])
+    history1[1].append(y1[i])
+    history2[0].append(x2[i])
+    history2[1].append(y2[i])
+    bots[0].set_data([x1[i], y1[i]])
+    bots[1].set_data([x2[i], y2[i]])
+    travel_line[0].set_data(history1)
+    travel_line[1].set_data(history2)
+
+ani = animation.FuncAnimation(
+    fig, update, len(x1), interval=50, repeat=False
+)
+
+table1_rect = np.array([[0, 3, 3, 0, 0],[6, 6, 9, 9, 6]])
+table2_rect = table1_rect + np.array([7,0]).reshape(2,1)
+plt.plot(table1_rect[0], table1_rect[1], 'r')
+plt.plot(table2_rect[0], table2_rect[1], 'r')
+plt.plot([5],[0],'ro')
+plt.show()
