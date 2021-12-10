@@ -102,13 +102,12 @@ class OrderScheduler:
 
     def display(self,kobuki_num, order_list):
         drink_list = []
-        for item in order_list: 
-            #print(item.order)
-            if not kobuki_num: 
-                self.bt1.display_drink(item.order)
-            else: 
-                self.bt2.display_drink(item.order)
-            # time.sleep(2)
+        drinks_string = " ".join(order_list)
+        if kobuki_num == 0: 
+            self.bt1.display_drink(drinks_string)
+        else: 
+            self.bt2.display_drink(drinks_string)
+        # time.sleep(2)
 
         
         
