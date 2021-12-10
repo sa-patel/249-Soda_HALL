@@ -38,7 +38,7 @@ class Graph:
         visited = [a]
         queue = [(a, [])]
         while queue:
-            visit, history = queue.pop()
+            visit, history = queue.pop(0)
             if visit == b:
                 return history+[b]
             for i in self.adj[visit]:

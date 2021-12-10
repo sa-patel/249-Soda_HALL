@@ -131,7 +131,7 @@ while scheduler.queue.size > 0 or prev_idles < 5:
         prev_idles = 0
     # sleep(0.1)
 
-fig = plt.figure()
+fig = plt.figure(figsize=(10, 6))
 ax = fig.add_subplot(xlim = (-1, 11), ylim = (-1, 11))
 history1=[[],[]]
 history2=[[],[]]
@@ -154,7 +154,19 @@ ani = animation.FuncAnimation(
 
 table1_rect = np.array([[0, 3, 3, 0, 0],[6, 6, 9, 9, 6]])
 table2_rect = table1_rect + np.array([7,0]).reshape(2,1)
+delivery_i = (1,2,5,6,3,4,7,8)
+intermediate_i = (9,10,11,12)
+delivery_locations = []
+intermediate_locations = []
+for i in delivery_i:
+    delivery_locations.append(test_waypoints[i])
+for i in intermediate_i:
+    intermediate_locations.append(test_waypoints[i])
+delivery_locations = np.array(delivery_locations).T
+intermediate_locations = np.array(intermediate_locations).T
 plt.plot(table1_rect[0], table1_rect[1], 'r')
 plt.plot(table2_rect[0], table2_rect[1], 'r')
+plt.plot(delivery_locations[0], delivery_locations[1], 'b+')
+plt.plot(intermediate_locations[0], intermediate_locations[1], 'mx')
 plt.plot([5],[0],'ro')
 plt.show()
