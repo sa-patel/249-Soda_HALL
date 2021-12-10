@@ -35,7 +35,8 @@ def main_loop():
     webcam = Webcam()
 
     coords = webcam.get_static_data()
-    waypoints = [Waypoint(i, coords[i]) for i in range(13)]
+    #waypoints = [Waypoint(i, coords[i]) for i in range(13)]
+    waypoints = [Waypoint(i, (100.0, 100.0)) for i in range(13)]
 
     nav_graph = NavGraph()
     for w_i in WAYPOINTS:
