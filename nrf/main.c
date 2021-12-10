@@ -78,7 +78,7 @@ static simple_ble_char_t test_error_data = {.uuid16 = 0x108c};
 static simple_ble_char_t display_string_data = {.uuid16 = 0x108d};
 static simple_ble_char_t get_button_press = {.uuid16 = 0x108e};
 
-static simple_ble_char_t get_kobubki_state= {.uuid16 = 0x105c};
+static simple_ble_char_t get_kobuki_state= {.uuid16 = 0x105c};
 static simple_ble_char_t led1_state_char = {.uuid16 = 0x105d};
 
 
@@ -89,7 +89,7 @@ static uint8_t error_data[6];
 static volatile int g_button_pressed = 0;
 
 static unsigned char buf_disp[64]; 
-static unsigned char buf_state[16];
+static unsigned char buf_state[64];
 KobukiSensors_t sensors = {0};
 
 //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
@@ -140,7 +140,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
         nrf_gpio_pin_set(BUCKLER_LED0);
       }
     }
-    if (simple_ble_is_char_event(p_ble_evt, &get_kobubki_state)) {
+    if (simple_ble_is_char_event(p_ble_evt, &get_kobuki_state)) {
       if (strcmp((char*)buf_state, "IDLE") == 0) { 
         current_state = IDLE;
       } else if (strcmp((char*)buf_state,"RETURNING") == 0){ 
@@ -199,7 +199,7 @@ int main(void) {
   simple_ble_app = simple_ble_init(&ble_config);
 
   simple_ble_add_service(&generic_service);
-  simple_ble_add_service(&state_service);
+ 
 
   simple_ble_add_characteristic(1, 1, 0, 0,
     sizeof(uint8_t),&button_press,
@@ -213,9 +213,11 @@ int main(void) {
       sizeof(char)*64, buf_disp,
       &generic_service, &display_string_data);
 
+  simple_ble_add_service(&state_service);
+
   simple_ble_add_characteristic(1, 1, 0, 0,
-      sizeof(char)*16, buf_state,
-      &state_service, &get_kobubki_state);
+      sizeof(char)*64, buf_state,
+      &state_service, &get_kobuki_state);
   
   simple_ble_add_characteristic(1, 1, 0, 0,
       sizeof(led_state), (uint8_t*)&led_state,
