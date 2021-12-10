@@ -32,13 +32,16 @@ class OrderScheduler:
                     drink_num += 1
                     k_order.append(order)
 
-                same_table_orders = self.queue.search_items_queue(cur_table,self.MAX_DRINK_CAPACITY - drink_num)
-                for item in same_table_orders:
-                    drink_num += 1
-                    k_order.append(item)
+                    same_table_orders = self.queue.search_items_queue(cur_table,self.MAX_DRINK_CAPACITY - drink_num)
+                    for item in same_table_orders:
+                        drink_num += 1
+                        k_order.append(item)
                        
-                self.display(i, k_order)
-                self.kobuki_state[i][0] = RobotStatus.LOADING
+                    self.display(i, k_order)
+                    self.kobuki_state[i][0] = RobotStatus.LOADING
+                else:
+                    # No orders in queue. Remain idle.
+                    pass
             elif state == RobotStatus.LOADING: 
                 self.wait_for_delivery_press(i)
             elif state == RobotStatus.UNLOADING:
@@ -47,9 +50,6 @@ class OrderScheduler:
             elif state == RobotStatus.DELIVERING_ORDER or state == RobotStatus.PLAN_PATH_TO_TABLE:
                 # TODO option to preempt if a higher priority order arrives. 
                 
-                pass
-            elif state == RobotStatus.DELIVERED_DRINKS:
-                # The scheduler does not operate on other states.
                 pass
             else:
                 # The scheduler does not operate on other states.
@@ -81,13 +81,12 @@ class OrderScheduler:
         return self.queue.dequeue()
     
     def wait_for_delivery_press(self, kobuki_num): 
-        print("waiting for press")
         if kobuki_num == 0:
             bt = self.bt1
         else:
             bt = self.bt2
         if bt.receive_button_press():
-            print("received press")
+            # print("received press")
             # Button was pressed. Update the state.
             state, orders, _ = self.kobuki_state[kobuki_num]
             if state == RobotStatus.LOADING and len(orders) > 0:
@@ -109,7 +108,7 @@ class OrderScheduler:
                 self.bt1.display_drink(item.order)
             else: 
                 self.bt2.display_drink(item.order)
-            time.sleep(2)
+            # time.sleep(2)
 
         
         

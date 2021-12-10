@@ -1,6 +1,6 @@
 import struct 
 from bluepy.btle import Peripheral, DefaultDelegate 
-import argparse
+from random import randint
 
 class BluetoothController:
     
@@ -45,9 +45,12 @@ class BluetoothController:
         positional_error_scaled_100x = positional_error * SCALE_FACTOR #312
         heading_error_scaled_100x = heading_error * SCALE_FACTOR #1323
         remaining_dist_scaled_100x = remaining_dist * SCALE_FACTOR
-        send_kobuki_bytes_0 = bytearray(int(positional_error_scaled_100x).to_bytes(2,'big'))
-        send_kobuki_bytes_1 = bytearray(int(heading_error_scaled_100x).to_bytes(2,'big'))
-        send_kobuki_bytes_2 = bytearray(int(remaining_dist_scaled_100x).to_bytes(2, 'big'))
+        MAX_INT = 32767
+        MIN_INT = -32768
+        byte_send = lambda n: bytearray(int(max(min(n, MAX_INT), MIN_INT)).to_bytes(2, 'big', signed=True))
+        send_kobuki_bytes_0 = byte_send(positional_error_scaled_100x)
+        send_kobuki_bytes_1 = byte_send(heading_error_scaled_100x)
+        send_kobuki_bytes_2 = byte_send(remaining_dist_scaled_100x)
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[0])
         send_kobuki_bytes_0.append(send_kobuki_bytes_1[1])
         send_kobuki_bytes_0.append(send_kobuki_bytes_2[0])
@@ -70,7 +73,8 @@ class BluetoothController:
             button_state = bool(int(self.kobuki_button.read().hex()))
             return button_state
         # Simulation:
-        return input("Button press {}? ".format(self.device_id))
+        # return input("Button press {}? ".format(self.device_id))
+        return randint(1,10) == 1
 
     def display_drink(self,drink):
         if self.kobuki_display is not None:

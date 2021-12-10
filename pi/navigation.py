@@ -101,16 +101,35 @@ class Navigation:
         x2 = desired_segment.xf
         y2 = desired_segment.yf
         
+        def subtract_angles(a, b):
+            """Result ranges from [-pi, pi]."""
+            result = a-b
+            if result > pi:
+                result -= 2*pi
+            elif result < -pi:
+                result += 2*pi
+            return result
        
         # Find error terms
-        heading_error = heading - desired_segment.segment_angle()
-        if heading_error > pi:
-            heading_error -= 2*pi
+        robot_to_endpoint = Segment(x, y, x2, y2).segment_angle()
+        # If robot has passed the endpoint, turn around.
+        segment_angle = desired_segment.segment_angle()
+        angle_difference = subtract_angles(segment_angle, robot_to_endpoint)
+        if abs(angle_difference) > pi/2:
+            # Robot passed the endpoint. Aim directly for the endpoint.
+            print("overshoot", desired_segment)
+            heading_error = subtract_angles(heading, robot_to_endpoint)
+            positional_error = 0
+        else:
+            heading_error = subtract_angles(heading, segment_angle)
+            
+            # Find distance from robot to the segment.
+            segment_length = desired_segment.length_squared()**0.5
+            if segment_length < self.ALMOST_ZERO:
+                print("Error: segment length near zero")
+            positional_error = ((x2-x1)*(y1-y)-(y2-y1)*(x1-x))/segment_length
+        
         remaining_dist = norm_sq(x2-x, y2-y)**0.5
-        segment_length = desired_segment.length_squared()**0.5
-        if segment_length < self.ALMOST_ZERO:
-            print("Error: segment length near zero")
-        positional_error = ((x2-x1)*(y1-y)-(y2-y1)*(x1-x))/segment_length
 
         return positional_error, heading_error, remaining_dist
     
@@ -152,9 +171,10 @@ class Navigation:
         if state == RobotStatus.IDLE:
             # stop the motors.
             return None
-        if state == RobotStatus.UNLOADING:
-            # TODO handle a button press and advance to the next state
+        elif state == RobotStatus.UNLOADING:
             # stop the motors.
+            return None
+        elif state == RobotStatus.LOADING:
             return None
         elif state == RobotStatus.PLAN_PATH_TO_BASE:
             # Plan the route to the base station.
@@ -199,7 +219,7 @@ class Navigation:
                     return advance_segment_check_state(RobotStatus.UNLOADING)
                 return current_segment
         else:
-            print("navigation state not implemented")
+            print("navigation state {} not implemented", state)
         return None
 
     def plan_path(self, kobuki_id, x0, y0, destination):
@@ -257,7 +277,7 @@ class Navigation:
     
     def route_print(self, kobuki_id):
         """Testing function to print the route"""
-        print("route", end=" ")
+        print("route kobuki", kobuki_id, end=" ")
         route = self.route[kobuki_id-1]
         for r in route:
             print(r, end=" ")
