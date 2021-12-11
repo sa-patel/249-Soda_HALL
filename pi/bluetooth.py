@@ -1,5 +1,3 @@
-import struct 
-
 from random import randint
 
 class BluetoothController:

@@ -4,8 +4,6 @@ Implements scheduling algorithm to receive and schedule customer orders
 
 # Project modules
 from customObjects import Queue, Order, RobotStatus
-from bluetooth import BluetoothController
-import time
 from waiter import KobukiRobot
 from navigation import SEAT_NO_TO_WAYPOINT_ID
 
