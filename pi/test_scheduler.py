@@ -1,6 +1,6 @@
 from customObjects import Queue, Order, RobotStatus
 from orderScheduler import OrderScheduler
-# from bluetooth import BluetoothController 
+from bluetooth import BluetoothController
 import time 
 from navigation import *
 from customObjects import Waypoint
@@ -15,10 +15,12 @@ waiter2 = KobukiRobot(2, nav_graph)
 
 scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 
-# bt1 = BluetoothController(1) 
-# bt2 = BluetoothController(2) 
+bt1 = BluetoothController(1)
+bt2 = BluetoothController(2)
 # bt1.connect()
 # bt2.connect() 
+bt1.connect_sim()
+bt2.connect_sim()
 
 #kobuki_state = [(RobotStatus.IDLE, [], 0), (RobotStatus.IDLE, [], 0)] # 2-tuple (STATE, Order) for each robot
 #kobuki_state = [[RobotStatus.IDLE, [], 0], [RobotStatus.IDLE, [], 0]] # 3-list [STATE, Orders, NUM_DRINKS] for each robot

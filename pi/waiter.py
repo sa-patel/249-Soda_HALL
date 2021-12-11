@@ -65,12 +65,14 @@ class KobukiRobot:
         heading = webcam_data["heading"]
 
         if self.next_waypoint is not None and math.dist((x, y), self.next_waypoint.coords) < DISTANCE_EPSILON:
+            self.displays = [] # By default, the display is blank.
             if self.next_waypoint in self.destinations:
                 self.state = RobotStatus.UNLOADING
             elif self.next_waypoint is self.home:
                 self.state = RobotStatus.LOADING
                 self.current_waypoint = self.next_waypoint
                 self.next_waypoint = None
+                self.displays = self.drinks.copy()
             else:
                 # TODO: unlock next waypoint
                 self.prev_waypoint = self.next_waypoint

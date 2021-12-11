@@ -1,5 +1,5 @@
 import struct 
-from bluepy.btle import Peripheral, DefaultDelegate 
+
 from random import randint
 
 class BluetoothController:
@@ -16,7 +16,8 @@ class BluetoothController:
         else: 
             self.UUID_ADDR = "C0:98:e5:49:00:02" #kobuki#2
 
-    def connect(self): 
+    def connect(self):
+        from bluepy.btle import Peripheral
         print("Attempting connection")
         kobuki_controller = Peripheral(self.UUID_ADDR)
         print("Connected succesfully")
@@ -81,3 +82,7 @@ class BluetoothController:
             self.kobuki_display.write(bytes(drink, 'utf-8'))
         else:
             print("Kobuki {} display: {}".format(self.device_id, drink))
+
+    def send_drinks_to_display(self, drinks):
+        drinks_string = " ".join(drinks)
+        self.display_drink(drinks_string)

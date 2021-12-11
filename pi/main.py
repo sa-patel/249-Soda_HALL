@@ -39,6 +39,12 @@ waiter2.set_home(waypoints[BASE_STATION_ID])
 
 scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 
+def transmit_display(waiter, bt):
+    """When loading drinks, transmit a list of drinks to display."""
+    if waiter.get_status() == RobotStatus.LOADING:
+        bt.send_drinks_to_display(waiter.drinks)
+    # TODO transmit blank in other states?
+
 def main_loop():
     bt1 = BluetoothController(1)
     bt2 = BluetoothController(2)
@@ -71,6 +77,8 @@ def main_loop():
         waiter2.update(data2)
         bt1.transmit_nav(*waiter1.get_heading())
         bt2.transmit_nav(*waiter1.get_heading())
+        transmit_display(waiter1, bt1)
+        transmit_display(waiter2, bt2)
 
         time.sleep(LOOP_PERIOD)
 

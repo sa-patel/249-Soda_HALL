@@ -43,8 +43,6 @@ class OrderScheduler:
                         wid = SEAT_NO_TO_WAYPOINT_ID[order.seat]
                         k.place_drink(order.order, self.waypoints[wid])
 
-                self.display(k.id, k.drinks)
-
     def create(self, customer, seat, order, priority):
         """Create an order with the given paramters. Add to queue.
         Returns SUCCESS, order_id if the order was added, where order_id is a
@@ -67,37 +65,3 @@ class OrderScheduler:
     def get_next_order(self):
         """Gets the next order to fulfill."""
         return self.queue.dequeue()
-    
-    def wait_for_delivery_press(self, kobuki_num):
-        if kobuki_num == 0:
-            bt = self.bt1
-        else:
-            bt = self.bt2
-        if bt.receive_button_press():
-            # print("received press")
-            # Button was pressed. Update the state.
-            state, orders, _ = self.kobuki_state[kobuki_num]
-            if state == RobotStatus.LOADING and len(orders) > 0:
-                state = RobotStatus.PLAN_PATH_TO_TABLE
-            elif state == RobotStatus.UNLOADING:
-                if len(orders) > 0:
-                    # Deliver the next order.
-                    state = RobotStatus.PLAN_PATH_TO_TABLE
-                else:
-                    # Return to base.
-                    state = RobotStatus.PLAN_PATH_TO_BASE
-            self.kobuki_state[kobuki_num][0] = state
-
-    def display(self,kobuki_num, order_list):
-        # TODO move this logic to KobukiRobot
-        drink_list = []
-        drinks_string = " ".join(order_list)
-        if kobuki_num == 1: 
-            self.bt1.display_drink(drinks_string)
-        else: 
-            self.bt2.display_drink(drinks_string)
-        # time.sleep(2)
-
-        
-        
-        
