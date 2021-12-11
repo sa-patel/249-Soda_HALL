@@ -93,7 +93,7 @@ class Waypoint:
         self.ident = ident
         self.coords = coords
         self.lock_holder = None
-        self.locking_group = self.id
+        self.locking_group = self.ident
 
     def try_lock(self, robot_id):
         if self.lock_holder is None:
@@ -103,5 +103,5 @@ class Waypoint:
             return False
 
     def __repr__(self):
-        return "Waypoint {}: typ={}; coords={}; lock_holder={}".format(self.id, \
-            self.typ, self.coords, self.lock_holder)
+        return "Waypoint {}: coords={}; lock_holder={}".format(self.ident, \
+            self.coords, self.lock_holder)

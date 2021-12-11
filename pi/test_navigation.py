@@ -1,37 +1,68 @@
-from navigation import Navigation
+from navigation import *
 from customObjects import RobotStatus, Order
+from bluetooth import BluetoothController
+from waiter import KobukiRobot
 from math import pi
-test_waypoints = [
+waypoint_locations = [
     (5, 0),
     (0, 10),
     (2, 10),
+    (4, 10),
+    (6, 10),
     (8, 10),
     (10, 10),
     (0, 5),
     (2, 5),
-    (8, 5),
-    (10, 5),
-    (4, 10),
-    (6, 10),
     (4, 5),
     (6, 5),
+    (8, 5),
+    (10, 5),
 ]
-kobuki_state = [[RobotStatus.IDLE, [0,0,0], 0], [RobotStatus.IDLE, [0,0,0], 0]]
-nav = Navigation(2, kobuki_state, waypoint_locations=test_waypoints)
 
-def loop(data1):
-    segment1 = nav.get_desired_segment(1, data1)
-    if segment1 is not None:
-        positional_error1, heading_error1, remaining_dist1 = nav.get_error_terms(data1["x"], data1["y"], data1["heading"], segment1)
-        print("{}\t{:.2f}\t{:.2f}\t{:.2f}\t{}\t{:.2f}\t\t{:.2f}\t\t{:.2f}".format(
-            kobuki_state[0][0], data1["x"], data1["y"], data1["heading"], 
+waypoints = [Waypoint(i, waypoint_locations[i]) for i in range(NUM_WAYPOINTS)]
+nav_graph = NavGraph()
+
+for w_i in waypoints:
+    # nav_graph.add_node(waypoints[w_i])
+    nav_graph.add_node(w_i)
+for w_i, w_j in WAYPOINT_EDGES:
+    # nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
+    nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
+waiter1 = KobukiRobot(1, nav_graph)
+# waiter2 = KobukiRobot(2, nav_graph)
+waiter1.set_home(waypoints[BASE_STATION_ID])
+# waiter2.set_home(waypoints[BASE_STATION_ID])
+
+bt1 = BluetoothController(1)
+# bt2 = BluetoothController(2)
+
+bt1.connect_sim()
+# bt2.connect_sim()
+
+def loop(data1, button1):
+
+    if button1:
+        waiter1.push_button()
+    # if button2:
+    #     waiter2.push_button()
+
+    waiter1.update(data1)
+    # waiter2.update(data2)
+    bt1.transmit_nav(*waiter1.get_heading())
+    # bt2.transmit_nav(*waiter1.get_heading())
+    
+    if waiter1.get_status() == RobotStatus.MOVING:
+        x0, y0 = waiter1.prev_waypoint.coords
+        x1, y1 = waiter1.next_waypoint.coords
+        segment1 = Segment(x0, y0, x1, y1)
+
+        positional_error1, heading_error1, remaining_dist1 = waiter1.get_heading()
+        print("{:.2f}\t{:.2f}\t{:.2f}\t{}\t{:.2f}\t\t{:.2f}\t\t{:.2f}".format(
+            data1["x"], data1["y"], data1["heading"], 
             segment1, positional_error1, heading_error1, remaining_dist1
         ))
     else:
-        print("{}\t{:.2f}\t{:.2f}\t{:.2f}\t{}\t\t\t-\t\t-\t\t-".format(
-            kobuki_state[0][0], data1["x"], data1["y"], data1["heading"], 
-            segment1
-        ))
+        pass
 
 # Test returning to base station
 traj = [
@@ -54,7 +85,6 @@ traj = [
 ]
 
 print("test returning to base station")
-kobuki_state[0] = [RobotStatus.PLAN_PATH_TO_BASE, [], 0]
 print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
 for xyt in traj:
     data = {
@@ -62,7 +92,8 @@ for xyt in traj:
         "y": xyt[1],
         "heading": xyt[2],
     }
-    loop(data)
+    button = True
+    loop(data, button)
 
 # Test delivering order
 traj = [
@@ -78,9 +109,9 @@ traj = [
     (0, 5, -pi/2),
 ]
 print("test delivering order")
-print(kobuki_state[0])
-kobuki_state[0] = [RobotStatus.PLAN_PATH_TO_TABLE, [Order("name", 2, 0, "water", 123), Order("name2", 1, 0, "juice", 456)], 2]
-print(kobuki_state[0])
+# print(kobuki_state[0])
+# kobuki_state[0] = [RobotStatus.PLAN_PATH_TO_TABLE, [Order("name", 2, 0, "water", 123), Order("name2", 1, 0, "juice", 456)], 2]
+# print(kobuki_state[0])
 print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
 for xyt in traj:
     data = {
@@ -91,9 +122,9 @@ for xyt in traj:
     loop(data)
 
 # Deliver the second order
-assert kobuki_state[0][0] == RobotStatus.UNLOADING
-print(kobuki_state[0])
-kobuki_state[0][0] = RobotStatus.PLAN_PATH_TO_TABLE
+# assert kobuki_state[0][0] == RobotStatus.UNLOADING
+# print(kobuki_state[0])
+# kobuki_state[0][0] = RobotStatus.PLAN_PATH_TO_TABLE
 traj = [
     (0, 5, -pi/2),
     (0, 5, pi/2),

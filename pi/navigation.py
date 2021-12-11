@@ -73,7 +73,11 @@ class NavGraph:
         self.adj_list[w] = []
 
     def connect_nodes(self, w1, w2):
-        if not self.adj_list.get(w1) or not self.adj_list.get(w2):
+        print(self.adj_list.get(w1))
+        print()
+        if self.adj_list.get(w1) is None or self.adj_list.get(w2) is None:
+            print(w1, w2)
+            print(self.adj_list)
             raise Exception("Waypoints not found in graph!")
 
         self.adj_list[w1].append(w2)

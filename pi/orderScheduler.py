@@ -86,6 +86,7 @@ class OrderScheduler:
             self.kobuki_state[kobuki_num][0] = state
 
     def display(self,kobuki_num, order_list):
+        # TODO move this logic to KobukiRobot
         drink_list = []
         drinks_string = " ".join(order_list)
         if kobuki_num == 0: 

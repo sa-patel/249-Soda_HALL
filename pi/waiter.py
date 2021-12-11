@@ -18,10 +18,10 @@ class KobukiRobot:
         self.prev_waypoint = None
         self.next_waypoint = None
         self.graph = graph
-        self.base_station = None
+        self.home = None
 
     def set_home(self, waypoint):
-        self.base_station = waypoint
+        self.home = waypoint
         self.prev_waypoint = waypoint
 
     def get_status(self):
