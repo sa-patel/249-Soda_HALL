@@ -48,7 +48,7 @@ def loop(data1, button1):
 
     waiter1.update(data1)
     # waiter2.update(data2)
-    bt1.transmit_nav(*waiter1.get_heading())
+    bt1.transmit_nav(*waiter1.get_heading(data1))
     # bt2.transmit_nav(*waiter1.get_heading())
     
     if waiter1.get_status() == RobotStatus.MOVING:
