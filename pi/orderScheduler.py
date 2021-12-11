@@ -13,6 +13,7 @@ class OrderScheduler:
     SUCCESS = 0
     ID_NOT_FOUND = 1
     MAX_DRINK_CAPACITY = 3
+    next_id = 0
 
     def __init__(self, kobukis, waypoints):
         self.kobukis = kobukis
@@ -41,6 +42,8 @@ class OrderScheduler:
                     for order in same_table_orders:
                         wid = SEAT_NO_TO_WAYPOINT_ID[order.seat]
                         k.place_drink(order.order, self.waypoints[wid])
+
+                self.display(k.id, k.drinks)
 
     def create(self, customer, seat, order, priority):
         """Create an order with the given paramters. Add to queue.
@@ -89,7 +92,7 @@ class OrderScheduler:
         # TODO move this logic to KobukiRobot
         drink_list = []
         drinks_string = " ".join(order_list)
-        if kobuki_num == 0: 
+        if kobuki_num == 1: 
             self.bt1.display_drink(drinks_string)
         else: 
             self.bt2.display_drink(drinks_string)
