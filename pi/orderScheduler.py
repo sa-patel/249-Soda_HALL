@@ -21,7 +21,7 @@ class OrderScheduler:
 
     def allocate(self):
         for k in self.kobukis:
-            if k.getStatus() == RobotStatus.LOADING:
+            if k.get_status() == RobotStatus.LOADING:
                 # # Without table prioritization
                 # while k.get_num_drinks() < KobukiRobot.MAX_DRINK_CAPACITY:
                 #     next_order = self.get_next_order()

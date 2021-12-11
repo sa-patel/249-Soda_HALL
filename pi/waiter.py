@@ -9,7 +9,7 @@ class KobukiRobot:
     
     def __init__(self, id, graph):
         self.id = id
-        self.state = RobotStatus.LOADING_UNLOADING
+        self.state = RobotStatus.LOADING
         self.route = []
         self.drinks = []
         self.destinations = []
@@ -24,8 +24,8 @@ class KobukiRobot:
         self.base_station = waypoint
         self.prev_waypoint = waypoint
 
-    def getStatus(self):
-        return self.status
+    def get_status(self):
+        return self.state
 
     def get_num_drinks(self):
         return len(self.drinks)
