@@ -73,8 +73,6 @@ class NavGraph:
         self.adj_list[w] = []
 
     def connect_nodes(self, w1, w2):
-        print(self.adj_list.get(w1))
-        print()
         if self.adj_list.get(w1) is None or self.adj_list.get(w2) is None:
             raise Exception("Waypoints not found in graph!")
 
@@ -88,11 +86,10 @@ class NavGraph:
         the next hop in that path.
         """
         if start in endpoints:
-            print(start, endpoints)
             # raise ValueError("START cannot also be in ENDPOINTS")
-            return [start, start]
+            return [start]
 
-        visited = {}
+        visited = set([])
         paths = [[start]]
         new_paths = []
         found = False
@@ -100,11 +97,9 @@ class NavGraph:
         while paths:
             path = paths.pop(0)
             end_node = path[-1]
-
             for neighbor in self.adj_list[end_node]:
                 if neighbor not in visited:
                     new_path = path + [neighbor]
-
                     if neighbor in endpoints:
                         print("Path found:", new_path) # Debug
                         # Return the second node, which is the
@@ -114,11 +109,13 @@ class NavGraph:
                     new_paths.append(new_path)
 
             visited.add(end_node)
-            paths = new_paths
+            paths += new_paths
             new_paths = []
 
         # If we could not find a valid path, we should just stall
-        return None
+        print("no route", start, endpoints)
+        raise Exception("no route found")
+        # return None
 
 # # TODO remove
 # norm_sq = lambda x, y: x**2 + y**2

@@ -32,19 +32,29 @@ class KobukiRobot:
         return len(self.drinks)
 
     def place_drink(self, drink, waypoint):
-        self.targets.append(drink)
-        self.destinations.append(waypoint)
+        self.destinations.append(waypoint) # Drink waypoint
+        self.drinks.append(drink) # Drink name
 
     def push_button(self):
         if self.state == RobotStatus.UNLOADING:
-            self.destinations.pop(0)
-            self.targets.pop(0)
-            print("Bot %d delivered %s".format(self.id, self.drinks.pop(0)))
+            self.destinations.pop(0) # TODO this will not work for unordered deliveries.
+            drink_name = self.drinks.pop(0)
+            print("Bot {} delivered {}".format(self.id, drink_name))
 
-        if len(self.drinks) > 0:
-            self.next_waypoint = self.graph.find_route(self.prev_waypoint, self.destinations)[1]
+        if len(self.drinks) > 0 and len(self.destinations) > 0:
+            route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]])
+            if len(route) >= 2:
+                self.next_waypoint = route[1]
+            else:
+                self.next_waypoint = None
+                return # Early return to avoid state update
         else:
-            self.next_waypoint = self.graph.find_route(self.prev_waypoint, [self.home])[1]
+            route = self.graph.find_route(self.prev_waypoint, [self.home])
+            if len(route) >= 2:
+                self.next_waypoint = route[1]
+            else:
+                self.next_waypoint = None
+                return # Already home.
 
         self.state = RobotStatus.MOVING
 
@@ -54,7 +64,7 @@ class KobukiRobot:
         y = webcam_data["y"]
         heading = webcam_data["heading"]
 
-        if math.dist((x, y), self.next_waypoint.coords) < DISTANCE_EPSILON:
+        if self.next_waypoint is not None and math.dist((x, y), self.next_waypoint.coords) < DISTANCE_EPSILON:
             if self.next_waypoint in self.destinations:
                 self.state = RobotStatus.UNLOADING
             elif self.next_waypoint is self.home:
@@ -65,13 +75,22 @@ class KobukiRobot:
                 # TODO: unlock next waypoint
                 self.prev_waypoint = self.next_waypoint
                 # Recompute the shortest path each time, because computers are fast
-                self.next_waypoint = self.graph.find_route(self.prev_waypoint, self.destinations)[1]
+                if len(self.destinations) > 0:
+                    route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]])
+                else:
+                    route = self.graph.find_route(self.prev_waypoint, [self.home])
+                if len(route) >= 2:
+                    self.next_waypoint = route[1]
+                else:
+                    self.next_waypoint = None
 
     def get_heading(self, webcam_data):
         """
         Returns the bluetooth transmission data.
         """
         if self.state == RobotStatus.LOADING or self.state == RobotStatus.UNLOADING:
+            return 0, 0, 0
+        elif self.next_waypoint is None:
             return 0, 0, 0
         else:
             this_x = webcam_data["x"]
@@ -98,6 +117,8 @@ def get_error_terms(x, y, heading, desired_segment):
     heading_error = heading - desired_segment.segment_angle()
     if heading_error > pi:
         heading_error -= 2*pi
+    if heading_error < -pi:
+        heading_error += 2*pi
     remaining_dist = math.dist([x, y], [x2, y2])
     segment_length = desired_segment.length_squared()**0.5
     assert(segment_length >= ALMOST_ZERO)

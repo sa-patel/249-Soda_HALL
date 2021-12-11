@@ -3,6 +3,7 @@ from customObjects import RobotStatus, Order
 from bluetooth import BluetoothController
 from waiter import KobukiRobot
 from math import pi
+from random import randint
 waypoint_locations = [
     (5, 0),
     (0, 10),
@@ -48,54 +49,46 @@ def loop(data1, button1):
 
     waiter1.update(data1)
     # waiter2.update(data2)
-    bt1.transmit_nav(*waiter1.get_heading(data1))
+    positional_error1, heading_error1, remaining_dist1 = waiter1.get_heading(data1)
+    bt1.transmit_nav(positional_error1, heading_error1, remaining_dist1)
     # bt2.transmit_nav(*waiter1.get_heading())
     
-    if waiter1.get_status() == RobotStatus.MOVING:
-        x0, y0 = waiter1.prev_waypoint.coords
+    x0, y0 = waiter1.prev_waypoint.coords
+    if waiter1.get_status() == RobotStatus.UNLOADING or waiter1.get_status() == RobotStatus.LOADING:
+        x1, y1 = None, None
+    elif waiter1.get_status() == RobotStatus.MOVING:
         x1, y1 = waiter1.next_waypoint.coords
-        segment1 = Segment(x0, y0, x1, y1)
-
-        positional_error1, heading_error1, remaining_dist1 = waiter1.get_heading()
-        print("{:.2f}\t{:.2f}\t{:.2f}\t{}\t{:.2f}\t\t{:.2f}\t\t{:.2f}".format(
-            data1["x"], data1["y"], data1["heading"], 
-            segment1, positional_error1, heading_error1, remaining_dist1
-        ))
     else:
+        print("unhandled state in testbench")
         pass
+    
+    segment1 = Segment(x0, y0, x1, y1)
 
-# Test returning to base station
-traj = [
-    (10, 10.1, -pi/2),
-    (10, 10.1, -pi/2),
-    (9, 9.9, -pi/2),
-    (8, 10.00, -pi/2),
-    (7, 10, -pi/2),
-    (6.4, 11, -pi/2),
-    (6, 10, pi),
-    (5.9, 9, pi),
-    (5.9, 8, 3.0),
-    (6, 7, pi),
-    (6, 5, pi),
-    (6, 3, pi),
-    (5.5, 1.1, pi),
-    (5, 0.1, pi),
-    (5, 0, pi),
-    (5, 0, pi),
-]
+    print("{}\t{:.2f}\t{:.2f}\t{:.2f}\t{}\t{:.2f}\t\t{:.2f}\t\t{:.2f}".format(
+        waiter1.state, data1["x"], data1["y"], data1["heading"], 
+        segment1, positional_error1, heading_error1, remaining_dist1
+    ))
 
-print("test returning to base station")
-print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
-for xyt in traj:
+def test_nav(traj):
+    print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
+    xyt = traj.pop(0)
     data = {
         "x": xyt[0],
         "y": xyt[1],
         "heading": xyt[2],
     }
-    button = True
-    loop(data, button)
+    while len(traj) > 0 and (len(waiter1.destinations) > 0 or waiter1.get_status() is not RobotStatus.LOADING):
+        button = randint(1,5) == 1
+        loop(data, button)
+        if waiter1.get_status() == RobotStatus.MOVING:
+            xyt = traj.pop(0)
+            data = {
+                "x": xyt[0],
+                "y": xyt[1],
+                "heading": xyt[2],
+            }
 
-# Test delivering order
+# Test delivering order to seat 3, waypoint 7. Then return to base station.
 traj = [
     (5, 0, 0),
     (5, 0, 0),
@@ -107,24 +100,44 @@ traj = [
     (2, 5.1, -pi/2),
     (-0.1, 5, -pi/2),
     (0, 5, -pi/2),
-]
-print("test delivering order")
-# print(kobuki_state[0])
-# kobuki_state[0] = [RobotStatus.PLAN_PATH_TO_TABLE, [Order("name", 2, 0, "water", 123), Order("name2", 1, 0, "juice", 456)], 2]
-# print(kobuki_state[0])
-print("state\t\t\tx\ty\theading\tsegment\t\t\tpos error\thead error\tremaining dist")
-for xyt in traj:
-    data = {
-        "x": xyt[0],
-        "y": xyt[1],
-        "heading": xyt[2],
-    }
-    loop(data)
+    (0, 5, -pi/2),
+    (-0.1, 5, pi/2),
+    (2, 5.1, pi/2),
+    (3, 4.5, 1.5),
+    (3, 5, pi/2),
+    (4, 5, pi/2),
+    (4.9, 2, pi),
+    (5, 0, -pi),
+    (5, 0, pi),
 
-# Deliver the second order
-# assert kobuki_state[0][0] == RobotStatus.UNLOADING
-# print(kobuki_state[0])
-# kobuki_state[0][0] = RobotStatus.PLAN_PATH_TO_TABLE
+]
+print("test delivering first order")
+waiter1.place_drink("water", waypoints[7])
+test_nav(traj)
+
+    
+
+# # Test returning to base station
+# traj = [
+#     (10, 10.1, -pi/2),
+#     (10, 10.1, -pi/2),
+#     (9, 9.9, -pi/2),
+#     (8, 10.00, -pi/2),
+#     (7, 10, -pi/2),
+#     (6.4, 11, -pi/2),
+#     (6, 10, pi),
+#     (5.9, 9, pi),
+#     (5.9, 8, 3.0),
+#     (6, 7, pi),
+#     (6, 5, pi),
+#     (6, 3, pi),
+#     (5.5, 1.1, pi),
+#     (5, 0.1, pi),
+#     (5, 0, pi),
+#     (5, 0, pi),
+# ]
+
+# Test delivery to seat 2
 traj = [
     (0, 5, -pi/2),
     (0, 5, pi/2),
@@ -138,11 +151,11 @@ traj = [
     (3, 10, -pi/2),
     (2, 10, -pi/2),
     (2, 10, -pi/2),
+    (4, 10, pi/2),
+    (4, 5, pi/2),
+    (5, 0, 0),
+    (5, 0, 0),
 ]
-for xyt in traj:
-    data = {
-        "x": xyt[0],
-        "y": xyt[1],
-        "heading": xyt[2],
-    }
-    loop(data)
+
+waiter1.place_drink("cola", waypoints[2])
+test_nav(traj)
