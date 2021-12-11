@@ -68,9 +68,10 @@ class KobukiRobot:
             self.displays = [] # By default, the display is blank.
             if self.next_waypoint in self.destinations:
                 self.state = RobotStatus.UNLOADING
+                self.prev_waypoint = self.next_waypoint
             elif self.next_waypoint is self.home:
                 self.state = RobotStatus.LOADING
-                self.current_waypoint = self.next_waypoint
+                self.prev_waypoint = self.next_waypoint
                 self.next_waypoint = None
                 self.displays = self.drinks.copy()
             else:
@@ -90,6 +91,7 @@ class KobukiRobot:
         """
         Returns the bluetooth transmission data.
         """
+        self.segment = None
         if self.state == RobotStatus.LOADING or self.state == RobotStatus.UNLOADING:
             return 0, 0, 0
         elif self.next_waypoint is None:
@@ -101,6 +103,7 @@ class KobukiRobot:
             x0, y0 = self.prev_waypoint.coords
             x1, y1 = self.next_waypoint.coords
             segment = Segment(x0, y0, x1, y1)
+            self.segment = segment # expose instance variable for debugging
 
             return get_error_terms(this_x, this_y, heading, segment)
 
@@ -115,12 +118,28 @@ def get_error_terms(x, y, heading, desired_segment):
     x2 = desired_segment.xf
     y2 = desired_segment.yf
 
+    def subtract_angles(a, b):
+        """Result ranges from [-pi, pi]."""
+        result = a-b
+        if result > pi:
+            result -= 2*pi
+        elif result < -pi:
+            result += 2*pi
+        return result
+
     # Find error terms
-    heading_error = heading - desired_segment.segment_angle()
-    if heading_error > pi:
-        heading_error -= 2*pi
-    if heading_error < -pi:
-        heading_error += 2*pi
+    robot_to_endpoint = Segment(x, y, x2, y2).segment_angle()
+    # If robot has passed the endpoint, turn around.
+    segment_angle = desired_segment.segment_angle()
+    angle_difference = subtract_angles(segment_angle, robot_to_endpoint)
+    if abs(angle_difference) > pi/2:
+        # Robot passed the endpoint. Aim directly for the endpoint.
+        print("overshoot", desired_segment)
+        heading_error = subtract_angles(heading, robot_to_endpoint)
+        positional_error = 0
+    else:
+        heading_error = subtract_angles(heading, segment_angle)
+
     remaining_dist = math.dist([x, y], [x2, y2])
     segment_length = desired_segment.length_squared()**0.5
     assert(segment_length >= ALMOST_ZERO)

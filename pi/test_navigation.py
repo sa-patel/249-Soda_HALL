@@ -24,10 +24,8 @@ waypoints = [Waypoint(i, waypoint_locations[i]) for i in range(NUM_WAYPOINTS)]
 nav_graph = NavGraph()
 
 for w_i in waypoints:
-    # nav_graph.add_node(waypoints[w_i])
     nav_graph.add_node(w_i)
 for w_i, w_j in WAYPOINT_EDGES:
-    # nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
     nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
 waiter1 = KobukiRobot(1, nav_graph)
 # waiter2 = KobukiRobot(2, nav_graph)

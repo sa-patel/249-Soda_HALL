@@ -1,30 +1,43 @@
-from navigation import Navigation
+from navigation import *
 from bluetooth import BluetoothController
 from orderScheduler import OrderScheduler
 from customObjects import RobotStatus
+from waiter import KobukiRobot
 from math import pi, sin, cos
 from random import gauss
 from time import sleep
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
-test_waypoints = [
+waypoint_locations = [
     (5, 0),
     (0, 10),
-    (2, 10),
-    (8, 10),
-    (10, 10),
-    (0, 5),
-    (2, 5),
-    (8, 5),
-    (10, 5),
+    (3, 10),
     (4, 10),
     (6, 10),
+    (7, 10),
+    (10, 10),
+    (0, 5),
+    (3, 5),
     (4, 5),
     (6, 5),
+    (7, 5),
+    (10, 5),
 ]
 
-kobuki_state = [[RobotStatus.IDLE, [], 0], [RobotStatus.IDLE, [], 0]]
+waypoints = [Waypoint(i, waypoint_locations[i]) for i in range(NUM_WAYPOINTS)]
+nav_graph = NavGraph()
+
+for w_i in waypoints:
+    nav_graph.add_node(w_i)
+for w_i, w_j in WAYPOINT_EDGES:
+    nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
+
+NUM_KOBUKIS = 2
+waiter1 = KobukiRobot(1, nav_graph)
+waiter2 = KobukiRobot(2, nav_graph)
+waiter1.set_home(waypoints[BASE_STATION_ID])
+waiter2.set_home(waypoints[BASE_STATION_ID])
 bt1 = BluetoothController(1)
 bt2 = BluetoothController(2)
 
@@ -32,10 +45,7 @@ bt2 = BluetoothController(2)
 bt1.connect_sim()
 bt2.connect_sim()
 
-scheduler = OrderScheduler(2, kobuki_state, bt1, bt2)
-
-NUM_KOBUKIS = 2
-nav = Navigation(NUM_KOBUKIS, kobuki_state, waypoint_locations=test_waypoints)
+scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 
 def noise(sigma):
     return gauss(0, sigma)
@@ -68,20 +78,26 @@ y2 = []
 def loop():
     data1 = data["kobuki1"]
     data2 = data["kobuki2"]
+    button1 = bt1.receive_button_press()
+    button2 = bt2.receive_button_press()
+    if button1:
+        waiter1.push_button()
+    if button2:
+        waiter2.push_button()
+
     scheduler.allocate()
-    segment1 = nav.get_desired_segment(1, data1)
-    segment2 = nav.get_desired_segment(2, data2)
-    bots = ((data1, segment1, bt1, kobuki_state[0]),
-            (data2, segment2, bt2, kobuki_state[1]))
-    for bot_data, segment, bt, state in bots:
-        if segment is None:
-            bt.transmit_nav(0, 0, 0)
-        else:
-            positional_error, heading_error, remaining_dist = nav.get_error_terms(bot_data["x"], bot_data["y"], bot_data["heading"], segment)
-            bt.transmit_nav(positional_error, heading_error, remaining_dist)
-            
+    waiter1.update(data1)
+    waiter2.update(data2)
+
+    bots = ((data1, waiter1, bt1),
+            (data2, waiter2, bt2))
+    
+    for bot_data, waiter, bt in bots:
+        positional_error, heading_error, remaining_dist = waiter.get_heading(bot_data)
+        bt.transmit_nav(positional_error, heading_error, remaining_dist)
+        if abs(positional_error) > 0 and abs(heading_error) > 0 and abs(remaining_dist) > 0:
             # Drive the bot (for simulation only)
-            theta = segment.segment_angle()
+            theta = waiter.segment.segment_angle()
             DECAY = 0.5
             STEP = 0.5 # meters
             d = min(STEP, remaining_dist)
@@ -96,12 +112,14 @@ def loop():
             bot_data["y"] += d*cos(heading) - DECAY*positional_error*sin(-theta)
             assert(bot_data["x"] > xL and bot_data["x"] < xU)
             assert(bot_data["y"] > yL and bot_data["y"] < yU)
+        else:
+            bt.transmit_nav(positional_error, heading_error, remaining_dist)
     
     print(format_string.format(
-            kobuki_state[0][0], data1["x"], data1["y"], data1["heading"], 
-            segment1.__str__(),
-            kobuki_state[1][0], data2["x"], data2["y"], data2["heading"], 
-            segment2.__str__(),
+            waiter1.get_status(), data1["x"], data1["y"], data1["heading"], 
+            waiter1.segment.__str__(),
+            waiter2.get_status(), data2["x"], data2["y"], data2["heading"], 
+            waiter2.segment.__str__(),
         ))
     x1.append(data1["x"])
     x2.append(data2["x"])
@@ -113,23 +131,22 @@ def loop():
 scheduler.create("Amit",1,"Gin",0)
 scheduler.create("Zak",2,"Rum",0)
 scheduler.create("Sagar",3,"Beer",0)
-scheduler.create("Max",4,"Vodka",0)
+scheduler.create("Max",6,"Vodka",0)
+scheduler.create("Amit2",5,"Cola",0)
 scheduler.create("Amit",1,"Whiskey",0)
 scheduler.create("Zak",2,"Tequila",0)
 scheduler.create("Sagar",3,"Seltzer",0)
-scheduler.create("Max",4,"Pop",0)
+scheduler.create("Max",6,"Pop",0)
 
 print_header = header_format_string.format("Status", "x", "y", "heading", "segment", "Status", "x", "y", "heading", "segment")
 print(print_header)
-prev_idles = 0
-while scheduler.queue.size > 0 or prev_idles < 5:
-    loop()
-    # Keep track of idle states and end the simulation when both robots stay idle.
-    if kobuki_state[0][0] == RobotStatus.IDLE and kobuki_state[1][0] == RobotStatus.IDLE:
-        prev_idles += 1
-    else:
-        prev_idles = 0
-    # sleep(0.1)
+while scheduler.queue.size > 0 or len(waiter1.destinations) > 0 or len(waiter2.destinations) > 0 or waiter1.get_status() is not RobotStatus.LOADING or waiter2.get_status() is not RobotStatus.LOADING:
+    try:
+        loop()
+        # sleep(0.1)
+    except Exception as e:
+        print(e)
+        break
 
 fig = plt.figure(figsize=(10, 6))
 ax = fig.add_subplot(xlim = (-1, 11), ylim = (-1, 11))
@@ -152,16 +169,16 @@ ani = animation.FuncAnimation(
     fig, update, len(x1), interval=50, repeat=False
 )
 
-table1_rect = np.array([[0, 3, 3, 0, 0],[6, 6, 9, 9, 6]])
-table2_rect = table1_rect + np.array([7,0]).reshape(2,1)
-delivery_i = (1,2,5,6,3,4,7,8)
-intermediate_i = (9,10,11,12)
+table1_rect = np.array([[1, 3, 3, 1, 1],[6, 6, 9, 9, 6]])
+table2_rect = table1_rect + np.array([6,0]).reshape(2,1)
+delivery_i = (1,2,5,6,7,8,11,12)
+intermediate_i = (3,4,9,10)
 delivery_locations = []
 intermediate_locations = []
 for i in delivery_i:
-    delivery_locations.append(test_waypoints[i])
+    delivery_locations.append(waypoint_locations[i])
 for i in intermediate_i:
-    intermediate_locations.append(test_waypoints[i])
+    intermediate_locations.append(waypoint_locations[i])
 delivery_locations = np.array(delivery_locations).T
 intermediate_locations = np.array(intermediate_locations).T
 plt.plot(table1_rect[0], table1_rect[1], 'r')
