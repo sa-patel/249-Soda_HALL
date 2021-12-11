@@ -27,20 +27,20 @@ class OrderScheduler:
                 #     next_order = self.get_next_order()
                 #     if next_order:
                 #         wid = SEAT_NO_TO_WAYPOINT_ID[next_order.seat]
-                #         k.place_drink(next_order.name, self.waypoints[wid])
+                #         k.place_drink(next_order.order, self.waypoints[wid])
                 while k.get_num_drinks() < KobukiRobot.MAX_DRINK_CAPACITY:
                     next_order = self.get_next_order()
                     if next_order is None:
                         break
                     
                     wid = SEAT_NO_TO_WAYPOINT_ID[next_order.seat]
-                    k.place_drink(next_order.name, self.waypoints[wid])
+                    k.place_drink(next_order.order, self.waypoints[wid])
                     cur_table = next_order.table
                     # Find additional orders
                     same_table_orders = self.queue.search_items_queue(cur_table,self.MAX_DRINK_CAPACITY - k.get_num_drinks())
                     for order in same_table_orders:
-                        wid = SEAT_NO_TO_WAYPOINT_ID[next_order.seat]
-                        k.place_drink(order.name, self.waypoints[wid])
+                        wid = SEAT_NO_TO_WAYPOINT_ID[order.seat]
+                        k.place_drink(order.order, self.waypoints[wid])
 
     def create(self, customer, seat, order, priority):
         """Create an order with the given paramters. Add to queue.

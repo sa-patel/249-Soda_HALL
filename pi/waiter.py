@@ -37,10 +37,11 @@ class KobukiRobot:
     def push_button(self):
         if self.state == RobotStatus.UNLOADING:
             self.destinations.pop(0)
+            self.targets.pop(0)
             print("Bot %d delivered %s".format(self.id, self.drinks.pop(0)))
 
         if len(self.drinks) > 0:
-            self.next_waypoint = self.graph.find_route(self.prev_waypoint, self.targets)[1]
+            self.next_waypoint = self.graph.find_route(self.prev_waypoint, self.destinations)[1]
         else:
             self.next_waypoint = self.graph.find_route(self.prev_waypoint, [self.home])[1]
 
@@ -63,7 +64,7 @@ class KobukiRobot:
                 # TODO: unlock next waypoint
                 self.prev_waypoint = self.next_waypoint
                 # Recompute the shortest path each time, because computers are fast
-                self.next_waypoint = self.graph.find_route(self.prev_waypoint, self.targets)[1]
+                self.next_waypoint = self.graph.find_route(self.prev_waypoint, self.destinations)[1]
 
     def get_heading(self, webcam_data):
         """

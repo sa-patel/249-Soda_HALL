@@ -76,8 +76,6 @@ class NavGraph:
         print(self.adj_list.get(w1))
         print()
         if self.adj_list.get(w1) is None or self.adj_list.get(w2) is None:
-            print(w1, w2)
-            print(self.adj_list)
             raise Exception("Waypoints not found in graph!")
 
         self.adj_list[w1].append(w2)
@@ -90,7 +88,9 @@ class NavGraph:
         the next hop in that path.
         """
         if start in endpoints:
-            raise ValueError("START cannot also be in ENDPOINTS")
+            print(start, endpoints)
+            # raise ValueError("START cannot also be in ENDPOINTS")
+            return [start, start]
 
         visited = {}
         paths = [[start]]
