@@ -30,7 +30,7 @@ imgpointsL = [] # 2d points in image plane.
 objpointsR = [] # 3d point in real world space
 imgpointsR = [] # 2d points in image plane.
 
-leftImages = glob.glob('/Users/tigre/pongBot/leftCamStereoCal/*.png')
+leftImages = glob.glob('/Users/tigre/pongBot/rightCamStereoCal/*.png')
 
 # Individual Camera Calibration
 for fname in leftImages:
@@ -170,17 +170,11 @@ def track(matrix_coefficients, distortion_coefficients):
 				composedRvec, composedTvec = relativePosition(firstRvec, firstTvec, secondRvec, secondTvec)
 
 
-
-
-
-
-
-
 # -------------------------------------------------------------
 # Test AR_Tag Relative pose with a fixed image. This section of code will be suplanted with live video later on
 # Test image shows a robot (ID 2) pointed towards destination (ID 3). Origin marker is given by ID 1
 
-test_img = cv.imread("AR_Tag_orientation_test.png")
+test_img = cv.imread("orient2.png")
 
 gray = cv2.cvtColor(test_img, cv2.COLOR_BGR2GRAY)
 aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
@@ -201,6 +195,7 @@ if ids is not None:
 	length_of_axis = 0.1
 	imaxis = aruco.drawDetectedMarkers(test_img.copy(), corners, ids)
 	for i in range(len(tvecs)):
+		print("id: {0} ".format(ids[i]))
 		imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
 		# print("tvec: {0} ".format(ids[i]), tvecs[i])
 		# print("rvec: {0} ".format(ids[i]), rvecs[i])
@@ -209,13 +204,30 @@ if ids is not None:
 			print("Origin found")
 			origin_tvec = tvecs[i]
 			origin_rvec = rvecs[i]
-		elif (origin_tvec is not None):
-			print("Position of ID {0} in Origin coordinates".format(ids[i]))
-			composedRvec, composedTvec = relativePosition(rvecs[i], tvecs[i],origin_rvec, origin_tvec)
-			print("tvec_origin: {0} ".format(ids[i]), composedTvec)
-			# print("rvec_origin: {0} ".format(ids[i]), composedRvec)
+
+	R_origin, _ = cv2.Rodrigues(origin_rvec)
 
 
+
+	if (origin_tvec is not None):
+			for i in range(len(tvecs)):
+				print("Position of ID {0} in Origin coordinates".format(ids[i]))
+				composedRvec, composedTvec = relativePosition(rvecs[i], tvecs[i], origin_rvec, origin_tvec)
+				print("tvec_origin: {0} ".format(ids[i]), composedTvec)
+				print("rvec_origin: {0} ".format(ids[i]), composedRvec)
+
+				print("tvec: {0} ".format(ids[i]), tvecs[i])
+				print("rvec: {0} ".format(ids[i]), rvecs[i])
+
+				R_target, _ = cv2.Rodrigues(rvecs[i]) # get the Rotation matrix for the 
+
+				print("R_target: ", R_target)
+				print('----------------')
+				print("R_target first column", R_target[0])
+				print("R_origin[:,2]", R_origin[:,2])
+				# takes the x axis (the first column of the rotation matrix) and finds the relative angle between them using arc-cosine
+				relative_angle = (360/ (2*np.pi)) * np.arccos(np.dot(R_origin[:,0], R_target[:,0]))
+				print("rel angle:",relative_angle)
 
 
 
@@ -226,11 +238,35 @@ plt.show()
 
 
 
+# Checks if a matrix is a valid rotation matrix.
+def isRotationMatrix(R) :
+	Rt = np.transpose(R)
+	shouldBeIdentity = np.dot(Rt, R)
+	I = np.identity(3, dtype = R.dtype)
+	n = np.linalg.norm(I - shouldBeIdentity)
+	return n < 1e-6
 
+# Calculates rotation matrix to euler angles
+# The result is the same as MATLAB except the order
+# of the euler angles ( x and z are swapped ).
+def rotationMatrixToEulerAngles(R) :
 
+	assert(isRotationMatrix(R))
 
+	sy = math.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
 
+	singular = sy < 1e-6
 
+	if  not singular :
+		x = math.atan2(R[2,1] , R[2,2])
+		y = math.atan2(-R[2,0], sy)
+		z = math.atan2(R[1,0], R[0,0])
+	else :
+		x = math.atan2(-R[1,2], R[1,1])
+		y = math.atan2(-R[2,0], sy)
+		z = 0
+
+	return np.array([x, y, z])
 
 
 # distance_error = 
