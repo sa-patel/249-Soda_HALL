@@ -54,7 +54,7 @@ def loop(data1, button1):
     x0, y0 = waiter1.prev_waypoint.coords
     if waiter1.get_status() == RobotStatus.UNLOADING or waiter1.get_status() == RobotStatus.LOADING:
         x1, y1 = None, None
-    elif waiter1.get_status() == RobotStatus.MOVING:
+    elif waiter1.get_status() == RobotStatus.DELIVERYING or waiter1.get_status() == RobotStatus.RETURNING:
         x1, y1 = waiter1.next_waypoint.coords
     else:
         print("unhandled state in testbench")
@@ -78,7 +78,7 @@ def test_nav(traj):
     while len(traj) > 0 and (len(waiter1.destinations) > 0 or waiter1.get_status() is not RobotStatus.LOADING):
         button = randint(1,5) == 1
         loop(data, button)
-        if waiter1.get_status() == RobotStatus.MOVING:
+        if waiter1.get_status() == RobotStatus.DELIVERYING or waiter1.get_status() == RobotStatus.RETURNING:
             xyt = traj.pop(0)
             data = {
                 "x": xyt[0],

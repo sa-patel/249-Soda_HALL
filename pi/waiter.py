@@ -87,9 +87,9 @@ class KobukiRobot:
                 # Recompute the shortest path each time, because computers are fast
                 # Must be deterministic, so robot doesn't change route mid-delivery
                 if len(self.destinations) > 0:
-                    route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]])
+                    route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]], self.no)
                 else:
-                    route = self.graph.find_route(self.prev_waypoint, [self.home])
+                    route = self.graph.find_route(self.prev_waypoint, [self.home], self.no)
                 if len(route) >= 2:
                     self.next_waypoint = route[1]
                 else:
