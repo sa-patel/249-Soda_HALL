@@ -88,7 +88,10 @@ static uint8_t button_press;
 static uint8_t error_data[6];
 static volatile int g_button_pressed = 0;
 
-static unsigned char buf_disp[64]; 
+static unsigned char buf_disp[64];
+#define DISPLAY_WIDTH 15
+volatile static char display_list[3][DISPLAY_WIDTH];
+// volatile static char** display_list = {"               ", "               ", "               "};
 static unsigned char buf_state[64];
 KobukiSensors_t sensors = {0};
 
@@ -114,13 +117,40 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
     if (simple_ble_is_char_event(p_ble_evt, &display_string_data)) {
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
       //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
-	    char delim[] = " ";
-      char *p = strtok((char*)buf_disp, delim); 
-      while (p != NULL){ 
-        display_write(p, DISPLAY_LINE_1);
+	    char delim[] = ",";
+      char *p = strtok((char*)buf_disp, delim);
+      int i = 0;
+      while (p != NULL){
+        if (i >= 3) {
+          break;
+        }
+        strncpy(display_list[i], p, DISPLAY_WIDTH);
+        printf("%d %s\n", i, p);
+        i++;
         p = strtok(NULL, delim);
-        nrf_delay_ms(2500);
       }
+        
+        char line_1[16];
+        if (i > 1) {
+          snprintf(line_1, DISPLAY_WIDTH, "%s %s", display_list[0], display_list[1]);
+          display_write(line_1, DISPLAY_LINE_0);
+        }
+        else if (i == 1) {
+          // display_write("               ", DISPLAY_LINE_0);
+          display_write(display_list[0], DISPLAY_LINE_0);
+        }
+        else {
+          // display_write("               ", DISPLAY_LINE_0);
+        }
+        if (i > 2) {
+          // display_write("               ", DISPLAY_LINE_1);
+          display_write(display_list[2], DISPLAY_LINE_1);
+        }
+        else {
+          // display_write("               ", DISPLAY_LINE_1);
+        }
+        //nrf_delay_ms(2500);
+      
     }
     if (simple_ble_is_char_event(p_ble_evt, &get_button_press)) {
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
@@ -161,6 +191,14 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
     } 
 }
 
+static int display_index = 0;
+static void advance_drink(void) {
+  display_write(display_list[display_index], DISPLAY_LINE_1);
+  //printf("%s\n", display_list[display_index]);
+  display_index++;
+  display_index%=3;
+}
+
 int main(void) {
 
   // Initialize
@@ -189,7 +227,7 @@ int main(void) {
   ret_code_t error_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
   APP_ERROR_CHECK(error_code);
   display_init(&spi_instance);
-  display_write("Hello, Human!", DISPLAY_LINE_0);
+  display_write("Waiter 1", DISPLAY_LINE_0);
   printf("Display initialized!\n");
 
   // Setup LED GPIO
@@ -213,15 +251,15 @@ int main(void) {
       sizeof(char)*64, buf_disp,
       &generic_service, &display_string_data);
 
-  simple_ble_add_service(&state_service);
+  // simple_ble_add_service(&state_service);
 
-  simple_ble_add_characteristic(1, 1, 0, 0,
-      sizeof(char)*64, buf_state,
-      &state_service, &get_kobuki_state);
+  // simple_ble_add_characteristic(1, 1, 0, 0,
+  //     sizeof(char)*64, buf_state,
+  //     &state_service, &get_kobuki_state);
   
-  simple_ble_add_characteristic(1, 1, 0, 0,
-      sizeof(led_state), (uint8_t*)&led_state,
-      &state_service, &led1_state_char);
+  // simple_ble_add_characteristic(1, 1, 0, 0,
+  //     sizeof(led_state), (uint8_t*)&led_state,
+  //     &state_service, &led1_state_char);
 
   // initialize i2c master (two wire interface)
   /*nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
@@ -238,30 +276,39 @@ int main(void) {
   simple_ble_adv_only_name();
   
   while(1) {
-    switch (current_state){ 
-      case LOADING:
-      case UNLOADING: {
-        kobukiSensorPoll(&sensors);
-        int check_button = is_button_pressed(&sensors);
-        if (check_button) { 
-          g_button_pressed = 1;
-        }
-        break;
-      } 
-      case DELIVERING_ORDER: 
-      case RETURNING:
-        g_button_pressed = 0;
-        drive();
-        break;
-      case PLAN_PATH_TO_BASE:
-      case PLAN_PATH_TO_TABLE: 
-      case IDLE:
-        g_button_pressed = 0; 
-      default:
-        g_button_pressed = 0;
-        //nrf_delay_ms(250);somehow this f**ks up everthing
-        break; 
-    }
+      kobukiSensorPoll(&sensors);
+      int check_button = is_button_pressed(&sensors);
+      if (check_button) { 
+        g_button_pressed = 1;
+      }
+      drive();
+
+    // switch (current_state){         if (check_button) { 
+    //      g_button_pressed = 1;
+    //    }
+    //   case LOADING:
+    //   case UNLOADING: {
+    //     kobukiSensorPoll(&sensors);
+    //     int check_button = is_button_pressed(&sensors);
+    //     if (check_button) { 
+    //       g_button_pressed = 1;
+    //     }
+    //     break;
+    //   } 
+    //   case DELIVERING_ORDER: 
+    //   case RETURNING:
+    //     g_button_pressed = 0;
+    //     drive();
+    //     break;
+    //   case PLAN_PATH_TO_BASE:
+    //   case PLAN_PATH_TO_TABLE: 
+    //   case IDLE:
+    //     g_button_pressed = 0; 
+    //   default:
+    //     g_button_pressed = 0;
+    //     //nrf_delay_ms(250);somehow this f**ks up everthing
+    //     break; 
+    // }
   }
 }
 
