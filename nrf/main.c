@@ -53,7 +53,7 @@ KobukiState_t current_state = IDLE;
 static simple_ble_config_t ble_config = {
         // c0:98:e5:49:xx:xx
         .platform_id       = 0x49,    // used as 4th octect in device BLE address
-        .device_id         = 0x0001, // TODO: replace with your lab bench number
+        .device_id         = 0x0002, // TODO: replace with your lab bench number
         .adv_name          = "EE149 LED", // used in advertisements if there is room
         .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
         .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS),
@@ -115,40 +115,43 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
       motors_drive_correction(pos_error, head_error, remain_dist);
     }
     if (simple_ble_is_char_event(p_ble_evt, &display_string_data)) {
+      char disp[15];
+      strncpy(disp, buf_disp, 15);
+      display_write(disp,DISPLAY_LINE_0);
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
       //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
-	    char delim[] = ",";
-      char *p = strtok((char*)buf_disp, delim);
-      int i = 0;
-      while (p != NULL){
-        if (i >= 3) {
-          break;
-        }
-        strncpy(display_list[i], p, DISPLAY_WIDTH);
-        printf("%d %s\n", i, p);
-        i++;
-        p = strtok(NULL, delim);
-      }
+	    // char delim[] = ",";
+      // char *p = strtok((char*)buf_disp, delim);
+      // int i = 0;
+      // while (p != NULL){
+      //   if (i >= 3) {
+      //     break;
+      //   }
+      //   strncpy(display_list[i], p, DISPLAY_WIDTH);
+      //   printf("%d %s\n", i, p);
+      //   i++;
+      //   p = strtok(NULL, delim);
+      // }
         
-        char line_1[16];
-        if (i > 1) {
-          snprintf(line_1, DISPLAY_WIDTH, "%s %s", display_list[0], display_list[1]);
-          display_write(line_1, DISPLAY_LINE_0);
-        }
-        else if (i == 1) {
-          // display_write("               ", DISPLAY_LINE_0);
-          display_write(display_list[0], DISPLAY_LINE_0);
-        }
-        else {
-          // display_write("               ", DISPLAY_LINE_0);
-        }
-        if (i > 2) {
-          // display_write("               ", DISPLAY_LINE_1);
-          display_write(display_list[2], DISPLAY_LINE_1);
-        }
-        else {
-          // display_write("               ", DISPLAY_LINE_1);
-        }
+      //   char line_1[16];
+      //   if (i > 1) {
+      //     snprintf(line_1, DISPLAY_WIDTH, "%s %s", display_list[0], display_list[1]);
+      //     display_write(line_1, DISPLAY_LINE_0);
+      //   }
+      //   else if (i == 1) {
+      //     display_write("               ", DISPLAY_LINE_0);
+      //     display_write(display_list[0], DISPLAY_LINE_0);
+      //   }
+      //   else {
+      //     display_write("               ", DISPLAY_LINE_0);
+      //   }
+      //   if (i > 2) {
+      //     display_write("               ", DISPLAY_LINE_1);
+      //     display_write(display_list[2], DISPLAY_LINE_1);
+      //   }
+      //   else {
+      //     display_write("               ", DISPLAY_LINE_1);
+      //   }
         //nrf_delay_ms(2500);
       
     }
