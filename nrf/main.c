@@ -53,7 +53,7 @@ KobukiState_t current_state = IDLE;
 static simple_ble_config_t ble_config = {
         // c0:98:e5:49:xx:xx
         .platform_id       = 0x49,    // used as 4th octect in device BLE address
-        .device_id         = 0x0002, // TODO: replace with your lab bench number
+        .device_id         = 0x00FF, // TODO: replace with your lab bench number
         .adv_name          = "EE149 LED", // used in advertisements if there is room
         .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
         .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS),
@@ -66,11 +66,11 @@ static simple_ble_service_t generic_service = {{
                 0xB5,0x4D,0x22,0x2B,0x89,0x10,0xE6,0x32}
 }};
 
-// 32e61059-2b22-4db5-a914-43ce41986c70
-static simple_ble_service_t state_service= {{
-    .uuid128 = {0x70,0x6C,0x98,0x41,0xCE,0x43,0x14,0xA9,
-                0xB5,0x4D,0x22,0x2B,0x59,0x10,0xE6,0x32}
-}};
+// // 32e61059-2b22-4db5-a914-43ce41986c70
+// static simple_ble_service_t state_service= {{
+//     .uuid128 = {0x70,0x6C,0x98,0x41,0xCE,0x43,0x14,0xA9,
+//                 0xB5,0x4D,0x22,0x2B,0x59,0x10,0xE6,0x32}
+// }};
 
 
 
@@ -88,7 +88,7 @@ static uint8_t button_press;
 static uint8_t error_data[6];
 static volatile int g_button_pressed = 0;
 
-static unsigned char buf_disp[64];
+static unsigned char buf_disp[16];
 #define DISPLAY_WIDTH 15
 volatile static char display_list[3][DISPLAY_WIDTH];
 // volatile static char** display_list = {"               ", "               ", "               "};
@@ -104,6 +104,7 @@ KobukiSensors_t sensors = {0};
 // Main application state
 simple_ble_app_t* simple_ble_app;
 
+      static char disp[15];
 void ble_evt_write(ble_evt_t const* p_ble_evt) {
     if (simple_ble_is_char_event(p_ble_evt, &test_error_data)) {
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
@@ -115,9 +116,11 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
       motors_drive_correction(pos_error, head_error, remain_dist);
     }
     if (simple_ble_is_char_event(p_ble_evt, &display_string_data)) {
-      char disp[15];
-      strncpy(disp, buf_disp, 15);
-      display_write(disp,DISPLAY_LINE_0);
+      //strncpy(disp, buf_disp, 15);
+      //display_write("...............", DISPLAY_LINE_0);
+      // snprintf(disp,"%-15s", 16, "hello");
+      // printf(disp);
+      display_write(buf_disp,DISPLAY_LINE_0);
       //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
       //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
 	    // char delim[] = ",";
@@ -169,7 +172,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
         printf("Turning on LED!\n");
         nrf_gpio_pin_clear(BUCKLER_LED0);
       } else {
-        printf("Turning off LED!\n");
+        printf("Turning off LED!n");
         nrf_gpio_pin_set(BUCKLER_LED0);
       }
     }
@@ -230,7 +233,7 @@ int main(void) {
   ret_code_t error_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
   APP_ERROR_CHECK(error_code);
   display_init(&spi_instance);
-  display_write("Waiter 1", DISPLAY_LINE_0);
+  display_write("Waiter 2", DISPLAY_LINE_0);
   printf("Display initialized!\n");
 
   // Setup LED GPIO
@@ -251,7 +254,7 @@ int main(void) {
       &generic_service, &test_error_data); ///send 6 bytes, 2 bytes for each error 
 
   simple_ble_add_characteristic(1, 1, 0, 0,
-      sizeof(char)*64, buf_disp,
+      sizeof(char)*16, buf_disp,
       &generic_service, &display_string_data);
 
   // simple_ble_add_service(&state_service);
@@ -284,7 +287,8 @@ int main(void) {
       if (check_button) { 
         g_button_pressed = 1;
       }
-      drive();
+      nrf_delay_ms(1);
+      //drive();
 
     // switch (current_state){         if (check_button) { 
     //      g_button_pressed = 1;
