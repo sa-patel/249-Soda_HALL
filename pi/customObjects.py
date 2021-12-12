@@ -84,16 +84,16 @@ class Order:
         self.order_id = order_id
 
 class RobotStatus(Enum):
-    MOVING = 1 # Bringing order to customer
+    DELIVERYING = 1 # Bringing order to customer
     UNLOADING = 2 # Order is being loaded onto or unloaded from robot
     LOADING = 3
+    RETURNING = 4 # Nothing on tray, going back to the base station
 
 class Waypoint:
     def __init__(self, ident, coords):
         self.ident = ident
         self.coords = coords
         self.lock_holder = None
-        self.locking_group = self.ident
 
     def try_lock(self, robot_id):
         if self.lock_holder is None:

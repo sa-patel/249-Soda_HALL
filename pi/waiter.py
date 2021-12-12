@@ -8,8 +8,8 @@ ALMOST_ZERO = 0.06
 class KobukiRobot:
     MAX_DRINK_CAPACITY = 3
     
-    def __init__(self, id, graph):
-        self.id = id
+    def __init__(self, no, graph):
+        self.no = no
         self.state = RobotStatus.LOADING
         self.route = []
         self.drinks = []
@@ -37,26 +37,30 @@ class KobukiRobot:
 
     def push_button(self):
         if self.state == RobotStatus.UNLOADING:
-            self.destinations.pop(0) # TODO this will not work for unordered deliveries.
-            drink_name = self.drinks.pop(0)
-            print("Bot {} delivered {}".format(self.id, drink_name))
+            # TODO: replace drinks, destinations with Order class because this is garbage
+            for (drink, dest) in zip(self.drinks, self.destinations):
+                if dest is self.prev_waypoint:
+                    self.destinations.remove(dest)
+                    self.drinks.remove(drink)
+                    print("Bot {} delivered {}".format(self.no, drink))
 
-        if len(self.drinks) > 0 and len(self.destinations) > 0:
-            route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]])
+        if len(self.drinks) > 0:
+            route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]], self.no)
             if len(route) >= 2:
                 self.next_waypoint = route[1]
             else:
                 self.next_waypoint = None
                 return # Early return to avoid state update
+            self.state = RobotStatus.DELIVERYING
         else:
-            route = self.graph.find_route(self.prev_waypoint, [self.home])
+            route = self.graph.find_route(self.prev_waypoint, [self.home], self.no)
             if len(route) >= 2:
                 self.next_waypoint = route[1]
             else:
                 self.next_waypoint = None
                 return # Already home.
+            self.state = RobotStatus.RETURNING
 
-        self.state = RobotStatus.MOVING
 
 
     def update(self, webcam_data):
@@ -69,15 +73,19 @@ class KobukiRobot:
             if self.next_waypoint in self.destinations:
                 self.state = RobotStatus.UNLOADING
                 self.prev_waypoint = self.next_waypoint
+                self.next_waypoint = None
             elif self.next_waypoint is self.home:
                 self.state = RobotStatus.LOADING
                 self.prev_waypoint = self.next_waypoint
                 self.next_waypoint = None
                 self.displays = self.drinks.copy()
             else:
-                # TODO: unlock next waypoint
+                if self.state == RobotStatus.RETURNING:
+                    self.prev_waypoint.lock_holder = None
+
                 self.prev_waypoint = self.next_waypoint
                 # Recompute the shortest path each time, because computers are fast
+                # Must be deterministic, so robot doesn't change route mid-delivery
                 if len(self.destinations) > 0:
                     route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]])
                 else:
@@ -95,6 +103,7 @@ class KobukiRobot:
         if self.state == RobotStatus.LOADING or self.state == RobotStatus.UNLOADING:
             return 0, 0, 0
         elif self.next_waypoint is None:
+            # We are stalled waiting for a path to clear up
             return 0, 0, 0
         else:
             this_x = webcam_data["x"]

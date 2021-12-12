@@ -66,7 +66,6 @@ class NavGraph:
         # which in Python is a dictionary mapping waypoints
         # to a list of other waypoints it's connected to
         self.adj_list = dict()
-        self.locking_groups = []
 
     def add_node(self, w):
         # We use a list here to ensure consistent iteration order
@@ -79,7 +78,7 @@ class NavGraph:
         self.adj_list[w1].append(w2)
         self.adj_list[w2].append(w1)
 
-    def find_route(self, start, endpoints):
+    def find_route(self, start, endpoints, robot_id):
         """
         Calculates the shortest path from START to any
         of the waypoints in ENDPOINTS and returns
@@ -98,12 +97,18 @@ class NavGraph:
             path = paths.pop(0)
             end_node = path[-1]
             for neighbor in self.adj_list[end_node]:
-                if neighbor not in visited:
+                # Check it's not visited and confirm we can acquire the lock
+                if neighbor not in visited and neighbor.lock_holder in (None, robot_id):
                     new_path = path + [neighbor]
                     if neighbor in endpoints:
-                        print("Path found:", new_path) # Debug
-                        # Return the second node, which is the
-                        # node connected to the starting point
+                        # Don't lock the starting point because we
+                        # presumably already locked it, or in the case of
+                        # startup we share the base station with the
+                        # other Kobuki
+                        for waypoint in new_path[1:]:
+                            waypoint.lock_holder = robot_id
+                        
+                        # print("Path found:", new_path) # Debug
                         return new_path
 
                     new_paths.append(new_path)
@@ -113,9 +118,7 @@ class NavGraph:
             new_paths = []
 
         # If we could not find a valid path, we should just stall
-        print("no route", start, endpoints)
-        raise Exception("no route found")
-        # return None
+        return None
 
 # # TODO remove
 # norm_sq = lambda x, y: x**2 + y**2
