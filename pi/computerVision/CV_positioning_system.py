@@ -18,7 +18,7 @@ from cv2 import aruco
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-origin_id = 1; # The origin of the space defined by an AR Tag
+origin_id = 99; # The origin of the space defined by an AR Tag
 
 # Camera Calibration section
 # termination criteria
@@ -33,7 +33,7 @@ imgpointsL = [] # 2d points in image plane.
 objpointsR = [] # 3d point in real world space
 imgpointsR = [] # 2d points in image plane.
 
-leftImages = glob.glob('/Users/tigre/pongBot/rightCamCalPics/*.png')
+leftImages = glob.glob('./computerVision/rightCamCalPics/*.png')
 
 # Individual Camera Calibration
 for fname in leftImages:
@@ -73,65 +73,65 @@ class CV_positioning_system:
 
 		# Two options to get static images, 1. live video feed and capture, or 2. still image 
 		# Single image test portion
-		frame = cv.imread("orient2.png")
-		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
-		parameters =  aruco.DetectorParameters_create()
-		corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-		frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+		# frame = cv.imread("orient2.png")
+		# gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		# aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
+		# parameters =  aruco.DetectorParameters_create()
+		# corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+		# frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 		
-		# # Live video 
-		# cam = cv2.VideoCapture(0)
-		# ret, frame = cam.read()
+		# Live video 
+		cam = cv2.VideoCapture(0)
+		ret, frame = cam.read()
 
-		# cv2.namedWindow("test")
+		cv2.namedWindow("test")
 
-		# image_accepted = False
+		image_accepted = False
 
-		# while not (image_accepted):
-		# 	ret, frame = cam.read()
-		# 	if not ret:
-		# 		print("Camera Read failure")
-		# 		break
+		while not (image_accepted):
+			ret, frame = cam.read()
+			if not ret:
+				print("Camera Read failure")
+				break
 
-		# 	# Show a frame
-		# 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		# 	# Choose AR Tag Dictionary size
-		# 	aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
-		# 	parameters =  aruco.DetectorParameters_create()
-		# 	corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-		# 	frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+			# Show a frame
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			# Choose AR Tag Dictionary size
+			aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
+			parameters =  aruco.DetectorParameters_create()
+			corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+			frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 
-		# 	if (ids) is not None:
-		# 		for i in range(len(ids)):
-		# 			c = corners[i][0]
-		# 			plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
+			if (ids) is not None:
+				for i in range(len(ids)):
+					c = corners[i][0]
+					plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
 
-		# 		size_of_marker =  0.18415 # side lenght of the marker in meter
-		# 		rvecs,tvecs, trash = aruco.estimatePoseSingleMarkers(corners, size_of_marker , new_mtxL, distL)
+				size_of_marker =  0.18415 # side lenght of the marker in meter
+				rvecs,tvecs, trash = aruco.estimatePoseSingleMarkers(corners, size_of_marker , new_mtxL, distL)
 
-		# 		length_of_axis = 0.1
-		# 		imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
-		# 		for i in range(len(tvecs)):
-		# 			imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
-		# 			print("Tvec: ", tvecs[i])
-		# 			print("rvec: ", rvecs[i])
-		# 			print('AR_Tag Found')
-		# 			cv2.imshow('AR_Tag', imaxis)
+				length_of_axis = 0.1
+				imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+				for i in range(len(tvecs)):
+					imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
+					print("Tvec: ", tvecs[i])
+					print("rvec: ", rvecs[i])
+					print('AR_Tag Found')
+					cv2.imshow('AR_Tag', imaxis)
 
 
-		# 	k = cv2.waitKey(1)
-		# 	if k%256 == 32:
-		# 		cam.release()
-		# 		cv2.destroyAllWindows()
-		# 		image_accepted = True
+			k = cv2.waitKey(1)
+			if k%256 == 32:
+				cam.release()
+				cv2.destroyAllWindows()
+				image_accepted = True
 
-		# 	if k%256 == 27:
-		# 		# ESC pressed
-		# 		print("Escape hit, closing...")
-		# 		cam.release()
-		# 		cv2.destroyAllWindows()
-		# 		break
+			if k%256 == 27:
+				# ESC pressed
+				print("Escape hit, closing...")
+				cam.release()
+				cv2.destroyAllWindows()
+				break
 				
 		# Iterate through the IDs and find their relative positions in the origin frame coordinates
 		if ids is not None:
@@ -200,10 +200,11 @@ class CV_positioning_system:
 		plt.show()
 
 		print(id_positions)
+		print("Ending function call")
 		return id_positions
 
 	# Provides robot positions return the positions and headings of the robots
-	# Robots are designated AR Tag IDs 98 & 99
+	# Robots are designated AR Tag IDs 97 & 98
 	def get_robot_positions(self):
 		"""Get location and heading of kobukis"""
 
@@ -407,9 +408,3 @@ def rotationMatrixToEulerAngles(R) :
 		z = 0
 
 	return np.array([x, y, z])
-
-
-
-
-test_obj = CV_positioning_system()
-test_obj.get_stationary_positions()

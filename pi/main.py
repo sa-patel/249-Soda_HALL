@@ -6,9 +6,11 @@ python3 main.py
 """
 
 # External libraries
+import sys
 import time
 import threading
 from orderScheduler import OrderScheduler
+from computerVision.CV_positioning_system import CV_positioning_system
 
 # Project modules
 from navigation import *
@@ -22,13 +24,25 @@ import server
 LOOP_PERIOD = 0.25 # Period, in seconds, of the main loop.
 NUM_KOBUKIS = 2
 
-webcam = Webcam()
-coords = webcam.get_static_data()
-waypoints = [Waypoint(i, (100.0, 100.0)) for i in range(NUM_WAYPOINTS)]
+pos_sys = CV_positioning_system()
+ids_to_coords = pos_sys.get_stationary_positions()
+
+waypoints = []
 nav_graph = NavGraph()
 
-for w_i in waypoints:
-    nav_graph.add_node(waypoints[w_i])
+for w_i in range(NUM_WAYPOINTS):
+    if ids_to_coords.get(w_i) is None:
+        print("ERROR: waypoint with id {} not present in image".format(w_i))
+        wp = Waypoint(w_i, (100.0, 100.0))
+        waypoints.append(wp)
+        nav_graph.add_node(wp)
+    else:
+        print(w_i, ids_to_coords[w_i][:2])
+        wp = Waypoint(w_i, ids_to_coords[w_i][:2])
+        waypoints.append(wp)
+        nav_graph.add_node(wp)
+
+
 for w_i, w_j in WAYPOINT_EDGES:
     nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
 
@@ -59,7 +73,8 @@ def main_loop():
     #waypoints = [Waypoint(i, coords[i]) for i in range(13)]
 
     while True:
-        data = webcam.get_data()
+        data = pos_sys.get_robot_positions()
+        return
         data1 = data["kobuki1"]
         data2 = data["kobuki2"]
 
