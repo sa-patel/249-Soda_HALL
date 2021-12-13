@@ -8,4 +8,4 @@ test_obj.get_stationary_positions()
 while True:
 
 	test_obj.get_robot_positions()
-	time.sleep(5)
+	time.sleep(0.1)

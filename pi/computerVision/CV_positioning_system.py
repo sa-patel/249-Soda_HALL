@@ -33,7 +33,7 @@ imgpointsL = [] # 2d points in image plane.
 objpointsR = [] # 3d point in real world space
 imgpointsR = [] # 2d points in image plane.
 
-calibImages = glob.glob('/Users/tigre/pongBot/rightCamCalPics/*.png')
+calibImages = glob.glob('rightCamCalPics/*.png')
 
 # Individual Camera Calibration
 for fname in calibImages:
@@ -158,8 +158,7 @@ class CV_positioning_system:
 					print("Origin found")
 					origin_tvec = tvecs[i]
 					origin_rvec = rvecs[i]
-
-			R_origin, _ = cv2.Rodrigues(origin_rvec)
+					R_origin, _ = cv2.Rodrigues(origin_rvec)
 
 			id_positions = {}
 			if (origin_tvec is not None):
@@ -198,9 +197,9 @@ class CV_positioning_system:
 					id_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), relative_angle)
 					print('----------------')
 
-		plt.figure()
-		plt.imshow(imaxis)
-		plt.show()
+		# plt.figure()
+		# plt.imshow(imaxis)
+		# plt.show()
 
 		print(id_positions)
 		return id_positions
@@ -246,8 +245,31 @@ class CV_positioning_system:
 				print("rvec: ", rvecs[i])
 				print('AR_Tag Found')
 
-		robot_positions = {}
+		# Iterate through the IDs and find their relative positions in the origin frame coordinates
+		if ids is not None:
+			for i in range(len(ids)):
+				c = corners[i][0]
+				plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
 
+			size_of_marker =  0.18415 # Length of AR Tag side (in meters)
+			rvecs,tvecs, trash = aruco.estimatePoseSingleMarkers(corners, size_of_marker , new_mtxL, distL)
+
+			length_of_axis = 0.1
+			imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+
+			for i in range(len(tvecs)):
+				print("id: {0} ".format(ids[i]))
+				imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
+				# print("tvec: {0} ".format(ids[i]), tvecs[i])
+				# print("rvec: {0} ".format(ids[i]), rvecs[i])
+
+				if (ids[i] == origin_id):
+					print("Origin found")
+					origin_tvec = tvecs[i]
+					origin_rvec = rvecs[i]
+					R_origin, _ = cv2.Rodrigues(origin_rvec)
+
+		robot_positions = {}
 		# Iterate through the IDs and find their relative positions in the origin frame coordinates
 		if ids is not None:
 			size_of_marker =  0.18415 # Length of AR Tag side (in meters)
