@@ -33,10 +33,10 @@ imgpointsL = [] # 2d points in image plane.
 objpointsR = [] # 3d point in real world space
 imgpointsR = [] # 2d points in image plane.
 
-leftImages = glob.glob('./computerVision/rightCamCalPics/*.png')
+calibImages = glob.glob('/Users/tigre/pongBot/rightCamCalPics/*.png')
 
 # Individual Camera Calibration
-for fname in leftImages:
+for fname in calibImages:
 	img = cv.imread(fname)
 	grayL = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 	# Find the chess board corners
@@ -56,6 +56,8 @@ cv.destroyAllWindows()
 retL, mtxL, distL, rvecsL, tvecsL = cv.calibrateCamera(objpointsL, imgpointsL, grayL.shape[::-1], None, None)
 hL,wL= img.shape[:2]
 new_mtxL, roiL= cv.getOptimalNewCameraMatrix(mtxL,distL,(wL,hL),1,(wL,hL))
+origin_tvec = np.empty([3,1])
+origin_rvec = np.empty([3,1])
 
 # ID 100 is origin. All results are provided relative to this origin coordinate frame 
 # The stationary positions reflect physical positions of waypoints and destination points. 
@@ -65,6 +67,7 @@ new_mtxL, roiL= cv.getOptimalNewCameraMatrix(mtxL,distL,(wL,hL),1,(wL,hL))
 class CV_positioning_system:
 	# The stationary positions reflect physical positions of waypoints and destination points. 
 	# These do not move over time.
+
 	def get_stationary_positions(self):
 		"""Get locations of tables and waypoints"""
 		# -------------------------------------------------------------
@@ -200,69 +203,99 @@ class CV_positioning_system:
 		plt.show()
 
 		print(id_positions)
-		print("Ending function call")
 		return id_positions
 
 	# Provides robot positions return the positions and headings of the robots
-	# Robots are designated AR Tag IDs 97 & 98
+	# Robots are designated AR Tag IDs 98 & 99
 	def get_robot_positions(self):
 		"""Get location and heading of kobukis"""
 
-		robot1_ID = 4
-		robot2_ID = 5
+		robot1_ID = 97
+		robot2_ID = 98
 
 		cam = cv2.VideoCapture(0)
 		ret, frame = cam.read()
 
 		cv2.namedWindow("test")
 
-		image_accepted = False
+		ret, frame = cam.read()
+		if not ret:
+			print("Camera Read failure")
 
-		while not (image_accepted):
-			ret, frame = cam.read()
-			if not ret:
-				print("Camera Read failure")
-				break
+		# Show a frame
+		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		# Choose AR Tag Dictionary size
+		aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
+		parameters =  aruco.DetectorParameters_create()
+		corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
+		frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 
-			# Show a frame
-			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-			# Choose AR Tag Dictionary size
-			aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_100)
-			parameters =  aruco.DetectorParameters_create()
-			corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
-			frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+		if (ids) is not None:
+			for i in range(len(ids)):
+				c = corners[i][0]
+				plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
 
-			if (ids) is not None:
+			size_of_marker =  0.18415 # side lenght of the marker in meter
+			rvecs,tvecs, trash = aruco.estimatePoseSingleMarkers(corners, size_of_marker , new_mtxL, distL)
+
+			length_of_axis = 0.1
+			imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+			for i in range(len(tvecs)):
+				imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
+				print("Tvec: ", tvecs[i])
+				print("rvec: ", rvecs[i])
+				print('AR_Tag Found')
+
+		robot_positions = {}
+
+		# Iterate through the IDs and find their relative positions in the origin frame coordinates
+		if ids is not None:
+			size_of_marker =  0.18415 # Length of AR Tag side (in meters)
+			rvecs,tvecs, trash = aruco.estimatePoseSingleMarkers(corners, size_of_marker , new_mtxL, distL)
+
+			length_of_axis = 0.1
+			imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
+
+			R_origin, _ = cv2.Rodrigues(origin_rvec)
+
+			if (origin_tvec is not None):
 				for i in range(len(ids)):
-					c = corners[i][0]
-					plt.plot([c[:, 0].mean()], [c[:, 1].mean()], "o", label = "id={0}".format(ids[i]))
+					if (ids[i] == robot1_ID) or (ids[i] == robot2_ID): 
+						# print("tvec: {0} ".format(ids[i]), tvecs[i])
+						# print("rvec: {0} ".format(ids[i]), rvecs[i])
 
-				size_of_marker =  0.18415 # side lenght of the marker in meter
-				rvecs,tvecs, trash = aruco.estimatePoseSingleMarkers(corners, size_of_marker , new_mtxL, distL)
+						print("Position of ID {0} in Origin coordinates".format(ids[i]))
+						composedRvec, composedTvec = relativePosition(rvecs[i], tvecs[i], origin_rvec, origin_tvec)
+						print("composedTvec: {0} ".format(ids[i]), composedTvec)
+						print("composedRvec: {0} ".format(ids[i]), composedRvec)
 
-				length_of_axis = 0.1
-				imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
-				for i in range(len(tvecs)):
-					imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
-					print("Tvec: ", tvecs[i])
-					print("rvec: ", rvecs[i])
-					print('AR_Tag Found')
-					cv2.imshow('AR_Tag', imaxis)
+						composedRvecMatrix, _ = cv2.Rodrigues(composedRvec)
+						print("composedRvec Matrix: \n", composedRvecMatrix)
+						# print("composedRvec x axis[:,0]", composedRvecMatrix[:,0])
+						# print("composedRvec y axis[:,1]", composedRvecMatrix[:,1])
 
-		data = {
-			"kobuki1": {
-				"x": 0,
-				"y": 0,
-				"heading": 0
-			},
-			"kobuki2": {
-				"x": 0,
-				"y": 0,
-				"heading": 0
-			}
-		}
+						R_target, _ = cv2.Rodrigues(rvecs[i]) # get the Rotation matrix
+						print("R_target: ", R_target)
+						# print("R_target[:,0]: id {0} ".format(ids[i]), R_target[:,0])
+						# print("R_target[:,1]: id {0} ".format(ids[i]), R_target[:,1])
+						print("R_origin[:,0]:", R_origin[:,0])
 
-		return data
+
+						# takes the x axis (the first column of the rotation matrix) and finds the relative angle between them using arc-cosine
+						relative_angle = (360/ (2*np.pi)) * np.arccos(np.dot(R_origin[:,0], R_target[:,0]))
+
+						# Take the dot product of the robot x-axis with the origin y-axis to recover the angle that was lost from arc-cosine
+						# If the dot product is negative, the angle will be in the opposite direction
+						if (np.dot(R_origin[:,1], R_target[:,0]) < 0):
+							relative_angle = -relative_angle
+						
+						print("rel angle:", relative_angle)
+						print("rvec_origin Z axis angle", (360/(2*np.pi)) * composedRvec[2])
+
+						robot_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), relative_angle)
+						print('----------------')
+		print(robot_positions)
+		return robot_positions
 
 
 def inversePerspective(rvec, tvec):
