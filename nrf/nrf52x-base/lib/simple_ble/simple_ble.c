@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <motors.h>
 
 // Nordic Libraries
 #include "app_error.h"
@@ -348,6 +349,7 @@ static void on_ble_evt(ble_evt_t const * p_ble_evt, void * p_context) {
             //advertising_start();
 
             printf("I'm disconnected\n");
+            motors_stop();
 
             // Callback for user. Weak reference, so check validity first
             if (ble_evt_disconnected) {

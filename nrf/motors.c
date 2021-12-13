@@ -31,9 +31,9 @@ const int MAX_SPEED = 150;
 const float kp_pos = 10;
 const float kd_pos = 1 / PERIOD;
 const float kdd_pos = 0; // Not implemented
-const float kp_head = 1;
+const float kp_head = 100;
 const float kd_head = 1 / PERIOD;
-const float kp_dist = 1;
+const float kp_dist = 100;
 
 volatile int left = 0;
 volatile int right = 0;
@@ -113,4 +113,9 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
     // Update prev variables.
     prev_pos_error = pos_error;
     prev_head_error = head_error;
+}
+
+void motors_stop(void) {
+    left = 0;
+    right = 0;
 }
