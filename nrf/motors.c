@@ -44,6 +44,7 @@ int g_orig_remaining_enc = 0;
 
 volatile int left = 0;
 volatile int right = 0;
+int g_driving = true;
 
  // initialize state
 typedef enum {
@@ -90,6 +91,7 @@ uint16_t g_right_enc = 0;
 void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc) {
     g_left_enc = left_enc;
     g_right_enc = right_enc;
+    g_driving = true;
 }
 
 static inline int overflow_subtract(uint16_t a, uint16_t b) {
@@ -104,12 +106,13 @@ static inline int overflow_subtract(uint16_t a, uint16_t b) {
 }
 
 void drive(uint16_t left_enc, uint16_t right_enc) {
+    if (!g_driving) return;
     // static uint16_t prev_left_enc = 0;
     // static uint16_t prev_right_enc = 0;
     int diff = overflow_subtract(right_enc, g_right_enc) - overflow_subtract(left_enc, g_left_enc);
     // int diff = (right_enc - g_right_enc) - (left_enc - g_left_enc);
     int error = g_desired_enc_diff - diff;
-    printf("error %d ",error);
+    // printf("error %d ",error);
     // int turn_speed = (int)(kp_enc_turn*error);
     int turn_speed = clamp((int)(kp_enc_turn*error), 80);
     int drive_speed = 0;
@@ -117,7 +120,7 @@ void drive(uint16_t left_enc, uint16_t right_enc) {
         drive_speed = BASE_SPEED;
     }
     g_remaining_enc = g_orig_remaining_enc - overflow_subtract(right_enc, g_right_enc);
-    printf("speeds %d %d\n", drive_speed+turn_speed, drive_speed-turn_speed);
+    // printf("speeds %d %d\n", drive_speed+turn_speed, drive_speed-turn_speed);
     kobukiDriveDirect(clamp(drive_speed-turn_speed, MAX_SPEED), clamp(drive_speed+turn_speed, MAX_SPEED));
 
 }
@@ -157,7 +160,7 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
     // Drive the motors.
     left = forward_speed - turn_speed;
     right = forward_speed + turn_speed;
-    printf("left %d right %d\n", left, right);
+    // printf("left %d right %d\n", left, right);
 
     // Update prev variables.
     prev_pos_error = pos_error;
@@ -165,6 +168,10 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
 }
 
 void motors_stop(void) {
-    left = 0;
+    left = 0; // deprecated
     right = 0;
+    // g_desired_enc_diff = 0;
+    // g_remaining_enc = 0;
+    // g_orig_remaining_enc = 0;
+    g_driving = false;
 }

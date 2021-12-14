@@ -98,8 +98,6 @@ volatile static char display_list[3][DISPLAY_WIDTH];
 static unsigned char buf_state[64];
 volatile KobukiSensors_t sensors = {0};
 
-static int lock = false;
-static nrf_mtx_t sensor_lock;
 
 static volatile float g_pos_error = 0;
 static volatile float g_head_error = 0;
@@ -118,9 +116,6 @@ simple_ble_app_t* simple_ble_app;
 
       // static char disp[15];
 void ble_evt_write(ble_evt_t const* p_ble_evt) {
-	printf("ble event\n");
-	if (!lock || true) {
-		lock = true;
 	// if (nrf_mtx_trylock(&sensors)){
 	    if (simple_ble_is_char_event(p_ble_evt, &test_error_data)) {
 	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
@@ -141,14 +136,14 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	      // 	motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
 	      // }
 	    }
-	    if (simple_ble_is_char_event(p_ble_evt, &display_string_data)) {
+	    else if (simple_ble_is_char_event(p_ble_evt, &display_string_data)) {
 	      //strncpy(disp, buf_disp, 15);
 	      //display_write("...............", DISPLAY_LINE_0);
 	      // snprintf(disp,"%-15s", 16, "hello");
 	      // printf(disp);
 	      display_write(buf_disp,DISPLAY_LINE_0);
 	    }
-	    if (simple_ble_is_char_event(p_ble_evt, &get_button_press)) {
+	    else if (simple_ble_is_char_event(p_ble_evt, &get_button_press)) {
 	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
 	      //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
 	      //char send_buf[16];
@@ -156,7 +151,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	      printf("button pressed %d \n",button_press);
 	      g_button_pressed = 0;
 	    }
-	    if (simple_ble_is_char_event(p_ble_evt, &ctrl_loop)) {
+	    else if (simple_ble_is_char_event(p_ble_evt, &ctrl_loop)) {
 	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
 	      //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
 	      //char send_buf[16];
@@ -167,7 +162,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 		  // kd_head = control_loop_param[3];
 		  // printf("kd_pos %d kd_pos %d kp_head %d kd_head %d\n",kp_pos,kd_pos,kp_head,kd_head);
 	    }
-	    if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
+	    else if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
 	      printf("Got write to LED characteristic!\n");
 	      if (led_state) {
 	        printf("Turning on LED!\n");
@@ -177,7 +172,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	        nrf_gpio_pin_set(BUCKLER_LED0);
 	      }
 	    }
-	    if (simple_ble_is_char_event(p_ble_evt, &get_kobuki_state)) {
+	    else if (simple_ble_is_char_event(p_ble_evt, &get_kobuki_state)) {
 	      if (strcmp((char*)buf_state, "IDLE") == 0) { 
 	        current_state = IDLE;
 	      } else if (strcmp((char*)buf_state,"RETURNING") == 0){ 
@@ -195,11 +190,7 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	      }else { 
 	        current_state = UNDEFINED;
 	      }
-	    } 
-		lock = false;
-	// 
-		//nrf_mtx_unlock(&sensor_lock);
-	}
+	    }
 }
 
 // static int display_index = 0;
@@ -267,25 +258,6 @@ int main(void) {
       sizeof(char)*16, buf_disp,
       &generic_service, &display_string_data);
 
-  // simple_ble_add_service(&state_service);
-
-  // simple_ble_add_characteristic(1, 1, 0, 0,
-  //     sizeof(char)*64, buf_state,
-  //     &state_service, &get_kobuki_state);
-  
-  // simple_ble_add_characteristic(1, 1, 0, 0,
-  //     sizeof(led_state), (uint8_t*)&led_state,
-  //     &state_service, &led1_state_char);
-
-  // initialize i2c master (two wire interface)
-  /*nrf_drv_twi_config_t i2c_config = NRF_DRV_TWI_DEFAULT_CONFIG;
-  i2c_config.scl = BUCKLER_SENSORS_SCL;
-  i2c_config.sda = BUCKLER_SENSORS_SDA;
-  i2c_config.frequency = NRF_TWIM_FREQ_100K;
-  error_code = nrf_twi_mngr_init(&twi_mngr_instance, &i2c_config);
-  APP_ERROR_CHECK(error_code);
-  lsm9ds1_init(&twi_mngr_instance);
-  printf("IMU initialized!\n");*/
   kobukiInit();
 
   // Start Advertising
@@ -297,27 +269,24 @@ int main(void) {
   motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
   
   while(1) {
-
   	kobukiSensorPoll(&sensors);
-  	// if (!lock || true) {
-   //    // lock = true;
-   //    kobukiSensorPoll(&sensors);
-   //    // lock = false;
-      // printf("encoders %d %d\n", sensors.leftWheelEncoder, sensors.rightWheelEncoder);
-   //  }
-
-  	// // if (nrf_mtx_trylock(&sensor_lock)){
-  	// // 	kobukiSensorPoll(&sensors);
-  	// // 	nrf_mtx_unlock(&sensor_lock);
-  	// // }
-  	// //kobukiSensorPoll(&sensors);
 
    	int check_button = is_button_pressed(&sensors);
-    if (check_button) { 
+    if (check_button) {
       g_button_pressed = 1;
     }
 
     if (g_transmission_rx) {
+  //   	float pos_error = ((int16_t)((error_data[0] << 8) | error_data[1]))/SCALE_FACTOR;
+		// float head_error = ((int16_t)((error_data[2] << 8) | error_data[3]))/SCALE_FACTOR;
+		// float remain_dist = ((int16_t)((error_data[4] << 8) | error_data[5]))/SCALE_FACTOR;
+		// // printf("Recovered positional error data: %f \n",pos_error);
+		// // printf("Recovered heading error data: %f \n",head_error);
+		// // printf("remaining distance error: %f \n",remain_dist);
+		// g_pos_error = pos_error;
+		// g_head_error = head_error;
+		// g_remain_dist = remain_dist;
+		printf("pos error %f\n", g_pos_error);
 		if (g_pos_error == 0 && g_head_error == 0 && g_remain_dist == 0) {
 			motors_stop();
 		} else {
@@ -327,35 +296,7 @@ int main(void) {
 		g_transmission_rx = false;
     }
     drive(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
-    nrf_delay_ms(10);
-      //drive();
-
-    // switch (current_state){         if (check_button) { 
-    //      g_button_pressed = 1;
-    //    }
-    //   case LOADING:
-    //   case UNLOADING: {
-    //     kobukiSensorPoll(&sensors);
-    //     int check_button = is_button_pressed(&sensors);
-    //     if (check_button) { 
-    //       g_button_pressed = 1;
-    //     }
-    //     break;
-    //   } 
-    //   case DELIVERING_ORDER: 
-    //   case RETURNING:
-    //     g_button_pressed = 0;
-    //     drive();
-    //     break;
-    //   case PLAN_PATH_TO_BASE:
-    //   case PLAN_PATH_TO_TABLE: 
-    //   case IDLE:
-    //     g_button_pressed = 0; 
-    //   default:
-    //     g_button_pressed = 0;
-    //     //nrf_delay_ms(250);somehow this f**ks up everthing
-    //     break; 
-    // }
+    nrf_delay_ms(100);
   }
 }
 
