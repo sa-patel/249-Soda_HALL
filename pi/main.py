@@ -84,8 +84,12 @@ def main_loop():
         data1 = data[KOBUKI_NUM_1]
         #data2 = data["kobuki2"]
 
-        button1 = bt1.receive_button_press()
-        #button2 = bt2.receive_button_press()
+        state1 = waiter1.get_status()
+        if state1 == RobotStatus.LOADING or state1 == RobotStatus.UNLOADING:
+            button1 = bt1.receive_button_press()
+        # state2 = waiter2.get_status()
+        # if state2 == RobotStatus.LOADING or state2 == RobotStatus.UNLOADING:
+        #     button2 = bt2.receive_button_press()
 
         if button1:
             print("PRESSED BUTTON")
