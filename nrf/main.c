@@ -56,9 +56,9 @@ static simple_ble_config_t ble_config = {
         .platform_id       = 0x49,    // used as 4th octect in device BLE address
         .device_id         = 0x00FE, // TODO: replace with your lab bench number
         .adv_name          = "Robot Waiter", // used in advertisements if there is room
-        .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
-        .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS),
-        .max_conn_interval = MSEC_TO_UNITS(1000, UNIT_1_25_MS),
+        .adv_interval      = MSEC_TO_UNITS(500, UNIT_0_625_MS),
+        .min_conn_interval = MSEC_TO_UNITS(25, UNIT_1_25_MS),
+        .max_conn_interval = MSEC_TO_UNITS(50, UNIT_1_25_MS),
 };
 
 // 32e61089-2b22-4db5-a914-43ce41986c70
@@ -103,6 +103,7 @@ static volatile float g_pos_error = 0;
 static volatile float g_head_error = 0;
 static volatile float g_remain_dist = 0;
 static volatile int g_transmission_rx = false;
+static lock = false;
 
 
 //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
@@ -117,17 +118,26 @@ simple_ble_app_t* simple_ble_app;
       // static char disp[15];
 void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	// if (nrf_mtx_trylock(&sensors)){
+	if (!lock){
+		lock = true;
 	    if (simple_ble_is_char_event(p_ble_evt, &test_error_data)) {
 	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
-	      float pos_error = ((int16_t)((error_data[0] << 8) | error_data[1]))/SCALE_FACTOR;
-	      float head_error = ((int16_t)((error_data[2] << 8) | error_data[3]))/SCALE_FACTOR;
-	      float remain_dist = ((int16_t)((error_data[4] << 8) | error_data[5]))/SCALE_FACTOR;
+
+
+	      // float pos_error = ((int16_t)((error_data[0] << 8) | error_data[1]))/SCALE_FACTOR;
+	      // float head_error = ((int16_t)((error_data[2] << 8) | error_data[3]))/SCALE_FACTOR;
+	      // float remain_dist = ((int16_t)((error_data[4] << 8) | error_data[5]))/SCALE_FACTOR;
+
+
+
 	      // printf("Recovered positional error data: %f \n",pos_error);
 	      // printf("Recovered heading error data: %f \n",head_error);
 	      // printf("remaining distance error: %f \n",remain_dist);
-	      g_pos_error = pos_error;
-	      g_head_error = head_error;
-	      g_remain_dist = remain_dist;
+
+	      // g_pos_error = pos_error;
+	      // g_head_error = head_error;
+	      // g_remain_dist = remain_dist;
+
 	      g_transmission_rx = true;
 	      // if (pos_error == 0 && head_error == 0 && remain_dist == 0) {
 	      // 	motors_stop();
@@ -148,49 +158,51 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	      //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
 	      //char send_buf[16];
 	      button_press = g_button_pressed;
-	      printf("button pressed %d \n",button_press);
+	      //printf("button pressed %d \n",button_press);
 	      g_button_pressed = 0;
 	    }
-	    else if (simple_ble_is_char_event(p_ble_evt, &ctrl_loop)) {
-	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
-	      //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
-	      //char send_buf[16];
-	      //c
-	   //    kp_pos = control_loop_param[0];
-		  // kd_pos = control_loop_param[1];
-		  // kp_head = control_loop_param[2];
-		  // kd_head = control_loop_param[3];
-		  // printf("kd_pos %d kd_pos %d kp_head %d kd_head %d\n",kp_pos,kd_pos,kp_head,kd_head);
-	    }
-	    else if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
-	      printf("Got write to LED characteristic!\n");
-	      if (led_state) {
-	        printf("Turning on LED!\n");
-	        nrf_gpio_pin_clear(BUCKLER_LED0);
-	      } else {
-	        printf("Turning off LED!n");
-	        nrf_gpio_pin_set(BUCKLER_LED0);
-	      }
-	    }
-	    else if (simple_ble_is_char_event(p_ble_evt, &get_kobuki_state)) {
-	      if (strcmp((char*)buf_state, "IDLE") == 0) { 
-	        current_state = IDLE;
-	      } else if (strcmp((char*)buf_state,"RETURNING") == 0){ 
-	        current_state = RETURNING;
-	      }else if (strcmp((char*)buf_state,"DELIVERING_ORDER") == 0){ 
-	        current_state = DELIVERING_ORDER;
-	      }else if (strcmp((char*)buf_state,"UNLOADING") == 0){ 
-	        current_state = UNLOADING;
-	      }else if (strcmp((char*)buf_state,"LOADING") == 0){ 
-	        current_state = LOADING;
-	      }else if (strcmp((char*)buf_state,"PLAN_PATH_TO_BASE") == 0){ 
-	        current_state = PLAN_PATH_TO_BASE;
-	      }else if (strcmp((char*)buf_state,"PLAN_PATH_TO_TABLE") == 0){ 
-	        current_state = PLAN_PATH_TO_TABLE;
-	      }else { 
-	        current_state = UNDEFINED;
-	      }
-	    }
+	   //  else if (simple_ble_is_char_event(p_ble_evt, &ctrl_loop)) {
+	   //    //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
+	   //    //snprintf(buf, 16, "%f", measure_distance(sensors.leftWheelEncoder, previous_encoder)); 
+	   //    //char send_buf[16];
+	   //    //c
+	   // //    kp_pos = control_loop_param[0];
+		  // // kd_pos = control_loop_param[1];
+		  // // kp_head = control_loop_param[2];
+		  // // kd_head = control_loop_param[3];
+		  // // printf("kd_pos %d kd_pos %d kp_head %d kd_head %d\n",kp_pos,kd_pos,kp_head,kd_head);
+	   //  }
+	    // else if (simple_ble_is_char_event(p_ble_evt, &led1_state_char)) {
+	    //   printf("Got write to LED characteristic!\n");
+	    //   if (led_state) {
+	    //     printf("Turning on LED!\n");
+	    //     nrf_gpio_pin_clear(BUCKLER_LED0);
+	    //   } else {
+	    //     printf("Turning off LED!n");
+	    //     nrf_gpio_pin_set(BUCKLER_LED0);
+	    //   }
+	    // }
+	    // else if (simple_ble_is_char_event(p_ble_evt, &get_kobuki_state)) {
+	    //   if (strcmp((char*)buf_state, "IDLE") == 0) { 
+	    //     current_state = IDLE;
+	    //   } else if (strcmp((char*)buf_state,"RETURNING") == 0){ 
+	    //     current_state = RETURNING;
+	    //   }else if (strcmp((char*)buf_state,"DELIVERING_ORDER") == 0){ 
+	    //     current_state = DELIVERING_ORDER;
+	    //   }else if (strcmp((char*)buf_state,"UNLOADING") == 0){ 
+	    //     current_state = UNLOADING;
+	    //   }else if (strcmp((char*)buf_state,"LOADING") == 0){ 
+	    //     current_state = LOADING;
+	    //   }else if (strcmp((char*)buf_state,"PLAN_PATH_TO_BASE") == 0){ 
+	    //     current_state = PLAN_PATH_TO_BASE;
+	    //   }else if (strcmp((char*)buf_state,"PLAN_PATH_TO_TABLE") == 0){ 
+	    //     current_state = PLAN_PATH_TO_TABLE;
+	    //   }else { 
+	    //     current_state = UNDEFINED;
+	    //   }
+	    // }
+	    lock = false;
+	}
 }
 
 // static int display_index = 0;
@@ -267,9 +279,14 @@ int main(void) {
 
   kobukiSensorPoll(&sensors);
   motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+  extern const nrf_serial_t * serial_ref;
+  int status = 0;
+  int count = 0;
   
   while(1) {
-  	kobukiSensorPoll(&sensors);
+  	//kobukiSensorPoll(&sensors);
+
+  	// count++;
 
    	int check_button = is_button_pressed(&sensors);
     if (check_button) {
@@ -277,26 +294,42 @@ int main(void) {
     }
 
     if (g_transmission_rx) {
-  //   	float pos_error = ((int16_t)((error_data[0] << 8) | error_data[1]))/SCALE_FACTOR;
-		// float head_error = ((int16_t)((error_data[2] << 8) | error_data[3]))/SCALE_FACTOR;
-		// float remain_dist = ((int16_t)((error_data[4] << 8) | error_data[5]))/SCALE_FACTOR;
-		// // printf("Recovered positional error data: %f \n",pos_error);
-		// // printf("Recovered heading error data: %f \n",head_error);
-		// // printf("remaining distance error: %f \n",remain_dist);
-		// g_pos_error = pos_error;
-		// g_head_error = head_error;
-		// g_remain_dist = remain_dist;
+    	float pos_error = ((int16_t)((error_data[0] << 8) | error_data[1]))/SCALE_FACTOR;
+		float head_error = ((int16_t)((error_data[2] << 8) | error_data[3]))/SCALE_FACTOR;
+		float remain_dist = ((int16_t)((error_data[4] << 8) | error_data[5]))/SCALE_FACTOR;
+		// printf("Recovered positional error data: %f \n",pos_error);
+		// printf("Recovered heading error data: %f \n",head_error);
+		// printf("remaining distance error: %f \n",remain_dist);
+		g_pos_error = pos_error;
+		g_head_error = head_error;
+		g_remain_dist = remain_dist;
 		printf("pos error %f\n", g_pos_error);
-		if (g_pos_error == 0 && g_head_error == 0 && g_remain_dist == 0) {
-			motors_stop();
-		} else {
-			motors_drive_correction(g_pos_error, g_head_error, g_remain_dist);
-			motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
-		}
-		g_transmission_rx = false;
+		if (!lock){
+			lock = true;
+			if (g_pos_error == 0 && g_head_error == 0 && g_remain_dist == 0) {
+				motors_stop();
+			} else {
+				motors_drive_correction(g_pos_error, g_head_error, g_remain_dist);
+				motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+			}
+			g_transmission_rx = false;
+			lock = false;
+		} 
     }
     drive(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
-    nrf_delay_ms(100);
+    if (!lock){
+    	lock = true;
+    	kobukiSensorPoll(&sensors);
+    	lock = false;
+    }
+    nrf_delay_ms(10);
+    // app_uart_flush();
+    //status = nrf_serial_rx_drain(serial_ref);
+
+    // if (count == 1000){
+    // 	printf("pos error %f\n", g_pos_error);
+    // 	count = 0;
+    // }
   }
 }
 
