@@ -54,6 +54,8 @@ class BluetoothController:
         #self.kobuki_channel.write(bytearray([1,2]))
         #self.kobuki_channel.write(bytes(positional_error))
         #self.kobuki_channel.write(bytes([not led_state]))
+        # positional_error = 1
+        # remaining_dist = 3
         positional_error_scaled_100x = positional_error * SCALE_FACTOR #312
         heading_error_scaled_100x = heading_error * SCALE_FACTOR #1323
         remaining_dist_scaled_100x = remaining_dist * SCALE_FACTOR
@@ -72,6 +74,7 @@ class BluetoothController:
             while True:
                 try:
                     self.kobuki_channel.write(send_kobuki_bytes_0)
+                    print("Sent errors: ",positional_error, heading_error, remaining_dist)
                     break
                 except Exception as e:
                     print(e)

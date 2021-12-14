@@ -11,6 +11,7 @@ import time
 import threading
 from orderScheduler import OrderScheduler
 from computerVision.CV_positioning_system import CV_positioning_system
+from threading import Thread 
 
 # Project modules
 from navigation import *
@@ -22,7 +23,9 @@ from waiter import KobukiRobot
 import server
 
 LOOP_PERIOD = 0.25 # Period, in seconds, of the main loop.
-NUM_KOBUKIS = 2
+NUM_KOBUKIS = 1
+KOBUKI_NUM_1 = 97
+KOBUKI_NUM_2 = 98
 
 pos_sys = CV_positioning_system()
 ids_to_coords = pos_sys.get_stationary_positions()
@@ -47,11 +50,13 @@ for w_i, w_j in WAYPOINT_EDGES:
     nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
 
 waiter1 = KobukiRobot(1, nav_graph)
-waiter2 = KobukiRobot(2, nav_graph)
+#waiter2 = KobukiRobot(2, nav_graph)
 waiter1.set_home(waypoints[BASE_STATION_ID])
-waiter2.set_home(waypoints[BASE_STATION_ID])
+#waiter2.set_home(waypoints[BASE_STATION_ID])
 
-scheduler = OrderScheduler([waiter1, waiter2], waypoints)
+#scheduler = OrderScheduler([waiter1, waiter2], waypoints)
+scheduler = OrderScheduler([waiter1], waypoints)
+scheduler.create("Amit",1,"Gin",0)
 
 def transmit_display(waiter, bt):
     """When loading drinks, transmit a list of drinks to display."""
@@ -59,9 +64,10 @@ def transmit_display(waiter, bt):
         bt.send_drinks_to_display(waiter.drinks)
     # TODO transmit blank in other states?
 
+
 def main_loop():
     bt1 = BluetoothController(1)
-    bt2 = BluetoothController(2)
+    #bt2 = BluetoothController(2)
 
     # Connect to nrf bluetooth
     # bt1.connect()
@@ -69,35 +75,38 @@ def main_loop():
 
     # Simulate bluetooth connection when testing without nrf
     bt1.connect_sim()
-    bt2.connect_sim()
+    #bt2.connect_sim()
     #waypoints = [Waypoint(i, coords[i]) for i in range(13)]
 
     while True:
         data = pos_sys.get_robot_positions()
-        return
-        data1 = data["kobuki1"]
-        data2 = data["kobuki2"]
+        print("KOUBKI POSITIONS: ",data)
+        data1 = data[KOBUKI_NUM_1]
+        #data2 = data["kobuki2"]
 
         button1 = bt1.receive_button_press()
-        button2 = bt2.receive_button_press()
+        #button2 = bt2.receive_button_press()
 
         if button1:
             waiter1.push_button()
-        if button2:
-            waiter2.push_button()
+        #if button2:
+        #    waiter2.push_button()
 
         scheduler.allocate()
 
         waiter1.update(data1)
-        waiter2.update(data2)
-        bt1.transmit_nav(*waiter1.get_heading())
-        bt2.transmit_nav(*waiter1.get_heading())
+        #waiter2.update(data2)
+        bt1.transmit_nav(*waiter1.get_heading(data1))
+        #bt2.transmit_nav(*waiter1.get_heading())
         transmit_display(waiter1, bt1)
-        transmit_display(waiter2, bt2)
+        #transmit_display(waiter2, bt2)
 
-        time.sleep(LOOP_PERIOD)
+        # time.sleep(LOOP_PERIOD)
+# except: 
+  
 
 if __name__ == "__main__":
+
     loop_thread = threading.Thread(target=main_loop)
     loop_thread.start()
     server.start(scheduler)

@@ -17,6 +17,7 @@ import cv2, PIL
 from cv2 import aruco
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import math
 
 origin_id = 99; # The origin of the space defined by an AR Tag
 
@@ -33,7 +34,7 @@ imgpointsL = [] # 2d points in image plane.
 objpointsR = [] # 3d point in real world space
 imgpointsR = [] # 2d points in image plane.
 
-calibImages = glob.glob('rightCamCalPics/*.png')
+calibImages = glob.glob('computerVision/rightCamCalPics/*.png')
 
 # Individual Camera Calibration
 for fname in calibImages:
@@ -65,6 +66,7 @@ origin_rvec = np.empty([3,1])
 # The robot positions return the positions and headings of the robots
 # Robots are designated AR Tag IDs 98 & 99
 class CV_positioning_system:
+	port_num = 0
 	# The stationary positions reflect physical positions of waypoints and destination points. 
 	# These do not move over time.
 
@@ -83,8 +85,17 @@ class CV_positioning_system:
 		# corners, ids, rejectedImgPoints = aruco.detectMarkers(gray, aruco_dict, parameters=parameters)
 		# frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 		
-		# Live video 
-		cam = cv2.VideoCapture(0)
+
+		# Live vide
+		# try:
+		# 	cam = cv2.VideoCapture(0) 
+		# 	self.port_num = 0
+		# except:
+		# 	self.port_num = 1
+		# 	cam = cv2.VideoCapture(self.port_num)
+		
+		self.port_num = 0
+		cam = cv2.VideoCapture(self.port_num)
 		ret, frame = cam.read()
 
 		cv2.namedWindow("test")
@@ -149,7 +160,7 @@ class CV_positioning_system:
 			imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 
 			for i in range(len(tvecs)):
-				print("id: {0} ".format(ids[i]))
+				#print("id: {0} ".format(ids[i]))
 				imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
 				# print("tvec: {0} ".format(ids[i]), tvecs[i])
 				# print("rvec: {0} ".format(ids[i]), rvecs[i])
@@ -166,21 +177,21 @@ class CV_positioning_system:
 					# print("tvec: {0} ".format(ids[i]), tvecs[i])
 					# print("rvec: {0} ".format(ids[i]), rvecs[i])
 
-					print("Position of ID {0} in Origin coordinates".format(ids[i]))
+					# print("Position of ID {0} in Origin coordinates".format(ids[i]))
 					composedRvec, composedTvec = relativePosition(rvecs[i], tvecs[i], origin_rvec, origin_tvec)
-					print("composedTvec: {0} ".format(ids[i]), composedTvec)
-					print("composedRvec: {0} ".format(ids[i]), composedRvec)
+					# print("composedTvec: {0} ".format(ids[i]), composedTvec)
+					# print("composedRvec: {0} ".format(ids[i]), composedRvec)
 
 					composedRvecMatrix, _ = cv2.Rodrigues(composedRvec)
-					print("composedRvec Matrix: \n", composedRvecMatrix)
-					print("composedRvec x axis[:,0]", composedRvecMatrix[:,0])
-					print("composedRvec y axis[:,1]", composedRvecMatrix[:,1])
+					# print("composedRvec Matrix: \n", composedRvecMatrix)
+					# print("composedRvec x axis[:,0]", composedRvecMatrix[:,0])
+					# print("composedRvec y axis[:,1]", composedRvecMatrix[:,1])
 
 					R_target, _ = cv2.Rodrigues(rvecs[i]) # get the Rotation matrix
-					print("R_target: ", R_target)
-					print("R_target[:,0]: id {0} ".format(ids[i]), R_target[:,0])
-					print("R_target[:,1]: id {0} ".format(ids[i]), R_target[:,1])
-					print("R_origin[:,0]:", R_origin[:,0])
+					# print("R_target: ", R_target)
+					# print("R_target[:,0]: id {0} ".format(ids[i]), R_target[:,0])
+					# print("R_target[:,1]: id {0} ".format(ids[i]), R_target[:,1])
+					# print("R_origin[:,0]:", R_origin[:,0])
 
 
 					# takes the x axis (the first column of the rotation matrix) and finds the relative angle between them using arc-cosine
@@ -191,8 +202,8 @@ class CV_positioning_system:
 					if (np.dot(R_origin[:,1], R_target[:,0]) < 0):
 						relative_angle = -relative_angle
 					
-					print("rel angle:", relative_angle)
-					print("rvec_origin Z axis angle", (360/(2*np.pi)) * composedRvec[2])
+					# print("rel angle:", relative_angle)
+					# print("rvec_origin Z axis angle", (360/(2*np.pi)) * composedRvec[2])
 
 					id_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), relative_angle)
 					print('----------------')
@@ -201,7 +212,7 @@ class CV_positioning_system:
 		# plt.imshow(imaxis)
 		# plt.show()
 
-		print(id_positions)
+		# print(id_positions)
 		return id_positions
 
 	# Provides robot positions return the positions and headings of the robots
@@ -212,14 +223,17 @@ class CV_positioning_system:
 		robot1_ID = 97
 		robot2_ID = 98
 
-		cam = cv2.VideoCapture(0)
+		cam = cv2.VideoCapture(self.port_num)
 		ret, frame = cam.read()
 
-		cv2.namedWindow("test")
+		# cv2.namedWindow("test")
 
 		ret, frame = cam.read()
 		if not ret:
 			print("Camera Read failure")
+
+		# cam.release()
+		# cv2.destroyAllWindows()
 
 		# Show a frame
 		gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -241,9 +255,9 @@ class CV_positioning_system:
 			imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 			for i in range(len(tvecs)):
 				imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
-				print("Tvec: ", tvecs[i])
-				print("rvec: ", rvecs[i])
-				print('AR_Tag Found')
+				#print("Tvec: ", tvecs[i])
+				#print("rvec: ", rvecs[i])
+				#print('AR_Tag Found')
 
 		# Iterate through the IDs and find their relative positions in the origin frame coordinates
 		if ids is not None:
@@ -258,7 +272,7 @@ class CV_positioning_system:
 			imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 
 			for i in range(len(tvecs)):
-				print("id: {0} ".format(ids[i]))
+				#print("id: {0} ".format(ids[i]))
 				imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
 				# print("tvec: {0} ".format(ids[i]), tvecs[i])
 				# print("rvec: {0} ".format(ids[i]), rvecs[i])
@@ -286,18 +300,18 @@ class CV_positioning_system:
 						# print("tvec: {0} ".format(ids[i]), tvecs[i])
 						# print("rvec: {0} ".format(ids[i]), rvecs[i])
 
-						print("Position of ID {0} in Origin coordinates".format(ids[i]))
+						#print("Position of ID {0} in Origin coordinates".format(ids[i]))
 						composedRvec, composedTvec = relativePosition(rvecs[i], tvecs[i], origin_rvec, origin_tvec)
-						print("composedTvec: {0} ".format(ids[i]), composedTvec)
-						print("composedRvec: {0} ".format(ids[i]), composedRvec)
+						#print("composedTvec: {0} ".format(ids[i]), composedTvec)
+						#print("composedRvec: {0} ".format(ids[i]), composedRvec)
 
 						composedRvecMatrix, _ = cv2.Rodrigues(composedRvec)
-						print("composedRvec Matrix: \n", composedRvecMatrix)
+						#print("composedRvec Matrix: \n", composedRvecMatrix)
 						# print("composedRvec x axis[:,0]", composedRvecMatrix[:,0])
 						# print("composedRvec y axis[:,1]", composedRvecMatrix[:,1])
 
 						R_target, _ = cv2.Rodrigues(rvecs[i]) # get the Rotation matrix
-						print("R_target: ", R_target)
+						#print("R_target: ", R_target)
 						# print("R_target[:,0]: id {0} ".format(ids[i]), R_target[:,0])
 						# print("R_target[:,1]: id {0} ".format(ids[i]), R_target[:,1])
 						print("R_origin[:,0]:", R_origin[:,0])
@@ -311,11 +325,11 @@ class CV_positioning_system:
 						if (np.dot(R_origin[:,1], R_target[:,0]) < 0):
 							relative_angle = -relative_angle
 						
-						print("rel angle:", relative_angle)
-						print("rvec_origin Z axis angle", (360/(2*np.pi)) * composedRvec[2])
+						#print("rel angle:", relative_angle)
+						#print("rvec_origin Z axis angle", (360/(2*np.pi)) * composedRvec[2])
 
-						robot_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), relative_angle)
-						print('----------------')
+						robot_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), math.radians(relative_angle))
+						#print('----------------')
 		print(robot_positions)
 		return robot_positions
 

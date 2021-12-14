@@ -64,9 +64,9 @@ class KobukiRobot:
 
 
     def update(self, webcam_data):
-        x = webcam_data["x"]
-        y = webcam_data["y"]
-        heading = webcam_data["heading"]
+        x = webcam_data[0]
+        y = webcam_data[1]
+        heading = webcam_data[2]
 
         if self.next_waypoint is not None and math.dist((x, y), self.next_waypoint.coords) < DISTANCE_EPSILON:
             self.displays = [] # By default, the display is blank.
@@ -106,9 +106,9 @@ class KobukiRobot:
             # We are stalled waiting for a path to clear up
             return 0, 0, 0
         else:
-            this_x = webcam_data["x"]
-            this_y = webcam_data["y"]
-            heading = webcam_data["heading"]
+            this_x = webcam_data[0]
+            this_y = webcam_data[1]
+            heading = webcam_data[2]
             x0, y0 = self.prev_waypoint.coords
             x1, y1 = self.next_waypoint.coords
             segment = Segment(x0, y0, x1, y1)

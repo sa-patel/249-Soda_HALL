@@ -50,7 +50,7 @@ WAYPOINT_EDGES = [
 ]
 
 SEAT_NO_TO_WAYPOINT_ID = {
-    1: 1,
+    1: 9,
     2: 2,
     3: 7,
     4: 8,
