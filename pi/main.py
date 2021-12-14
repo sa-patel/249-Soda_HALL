@@ -50,9 +50,9 @@ for w_i, w_j in WAYPOINT_EDGES:
     nav_graph.connect_nodes(waypoints[w_i], waypoints[w_j])
 
 waiter1 = KobukiRobot(1, nav_graph)
-#waiter2 = KobukiRobot(2, nav_graph)
-waiter1.set_home(waypoints[BASE_STATION_ID])
-#waiter2.set_home(waypoints[BASE_STATION_ID])
+waiter2 = KobukiRobot(2, nav_graph)
+waiter1.set_home(waypoints[BASE_STATION_1])
+waiter2.set_home(waypoints[BASE_STATION_2])
 
 #scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 scheduler = OrderScheduler([waiter1], waypoints)

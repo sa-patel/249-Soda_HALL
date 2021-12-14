@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 waypoint_locations = [
-    (5, 0),
+    (4, 0),
     (0, 10),
     (3, 10),
     (4, 10),
@@ -23,6 +23,7 @@ waypoint_locations = [
     (6, 5),
     (7, 5),
     (10, 5),
+    (6, 0),
 ]
 
 waypoints = [Waypoint(i, waypoint_locations[i]) for i in range(NUM_WAYPOINTS)]
@@ -36,8 +37,8 @@ for w_i, w_j in WAYPOINT_EDGES:
 NUM_KOBUKIS = 2
 waiter1 = KobukiRobot(1, nav_graph)
 waiter2 = KobukiRobot(2, nav_graph)
-waiter1.set_home(waypoints[BASE_STATION_ID])
-waiter2.set_home(waypoints[BASE_STATION_ID])
+waiter1.set_home(waypoints[BASE_STATION_1])
+waiter2.set_home(waypoints[BASE_STATION_2])
 bt1 = BluetoothController(1)
 bt2 = BluetoothController(2)
 
@@ -52,18 +53,18 @@ def noise(sigma):
 
 data = {
     "kobuki1": {
-        "x": 4.9,
+        "x": 4.0,
         "y": 0,
         "heading": 0,
     },
     "kobuki2": {
-        "x": 5.1,
+        "x": 6.0,
         "y": 0,
         "heading": 1,
     },
 }
 
-format_string = "{:28}{:6.2f}{:6.2f}{:9.2f}{:>20} {:28}{:6.2f}{:6.2f}{:9.2f}{:>20}"
+format_string = "{:28}{:6.2f}{:6.2f}{:9.2f} w_next={:<3} {:28}{:6.2f}{:6.2f}{:9.2f} w_next={:<3}"
 header_format_string = "{:28}{:6}{:6}{:9}{:>20} {:28}{:6}{:6}{:9}{:>20}"
 
 # Boundaries for testing
@@ -94,8 +95,10 @@ def loop():
     
     for bot_data, waiter, bt in bots:
         positional_error, heading_error, remaining_dist = waiter.get_heading(bot_data)
+        #if waiter.no == 1:
+            #print(waiter.no, "'s error:", waiter.get_heading(bot_data))
         bt.transmit_nav(positional_error, heading_error, remaining_dist)
-        if abs(positional_error) > 0 and abs(heading_error) > 0 and abs(remaining_dist) > 0:
+        if abs(positional_error) > 0 or abs(heading_error) > 0 or abs(remaining_dist) > 0:
             # Drive the bot (for simulation only)
             theta = waiter.segment.segment_angle()
             DECAY = 0.5
@@ -110,6 +113,8 @@ def loop():
             bot_data["heading"] = heading
             bot_data["x"] += d*sin(heading) - DECAY*positional_error*cos(-theta)
             bot_data["y"] += d*cos(heading) - DECAY*positional_error*sin(-theta)
+            #if waiter.no == 1:
+                #print(bot_data)
             assert(bot_data["x"] > xL and bot_data["x"] < xU)
             assert(bot_data["y"] > yL and bot_data["y"] < yU)
         else:
@@ -117,14 +122,16 @@ def loop():
     
     print(format_string.format(
             waiter1.get_status(), data1["x"], data1["y"], data1["heading"], 
-            waiter1.segment.__str__(),
+            waiter1.prev_waypoint.ident,
             waiter2.get_status(), data2["x"], data2["y"], data2["heading"], 
-            waiter2.segment.__str__(),
+            waiter2.prev_waypoint.ident,
         ))
     x1.append(data1["x"])
     x2.append(data2["x"])
     y1.append(data1["y"])
     y2.append(data2["y"])
+
+    sleep(0.1)
 
 
 
