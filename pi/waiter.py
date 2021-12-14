@@ -42,7 +42,7 @@ class KobukiRobot:
                 if dest is self.prev_waypoint:
                     self.destinations.remove(dest)
                     self.drinks.remove(drink)
-                    print("Bot {} delivered {}".format(self.no, drink))
+                    #print("Bot {} delivered {}".format(self.no, drink))
 
             if len(self.drinks) > 0:
                 self.state = RobotStatus.DELIVERYING
@@ -66,12 +66,14 @@ class KobukiRobot:
                     self.prev_waypoint = self.next_waypoint
                     self.next_waypoint = None
                     self.graph.unlock_by_id(self.no)
+                    self.prev_waypoint.lock_holder = self.no
                 elif self.next_waypoint is self.home:
                     self.state = RobotStatus.LOADING
                     self.prev_waypoint = self.next_waypoint
                     self.next_waypoint = None
                     self.displays = self.drinks.copy()
                     self.graph.unlock_by_id(self.no)
+                    self.prev_waypoint.lock_holder = self.no
                 else:
                     self.prev_waypoint = self.next_waypoint
 
@@ -89,6 +91,7 @@ class KobukiRobot:
                 self.next_waypoint = None
             else:
                 self.next_waypoint = self.route[1]
+                #print("setting next waypoint for", self.no, ":", self.next_waypoint)
 
     def get_heading(self, webcam_data):
         """

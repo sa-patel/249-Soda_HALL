@@ -103,5 +103,4 @@ class Waypoint:
             return False
 
     def __repr__(self):
-        return "Waypoint {}: coords={}; lock_holder={}".format(self.ident, \
-            self.coords, self.lock_holder)
+        return "W_{}<{}>".format(self.ident, self.lock_holder)

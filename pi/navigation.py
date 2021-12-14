@@ -24,8 +24,8 @@ Waypoint IDs:
   | ║         ║   |   |   ║         ║ |
   | ╚═════════╝   |   |   ╚═════════╝ |
   7-----------8---9---10--11----------12
-                   \ /
-                    0
+                  |   |
+                  0   13
 
 Seat numbers:
     ╔═════════╗           ╔═════════╗
@@ -39,11 +39,12 @@ import math
 # Project modules
 from customObjects import Segment, RobotStatus, Waypoint
 
-BASE_STATION_ID = 0
-NUM_WAYPOINTS = 13
+BASE_STATION_1 = 0
+BASE_STATION_2 = 13
+NUM_WAYPOINTS = 14
 
 WAYPOINT_EDGES = [
-    (0, 9), (0, 10), (1, 7), (7, 8),
+    (0, 9), (13, 10), (1, 7), (7, 8),
     (8, 9), (9, 3), (9, 10), (3, 2),
     (3, 4), (4, 5), (10, 11), (11, 12),
     (12, 6), (10, 4),
@@ -85,7 +86,6 @@ class NavGraph:
         the next hop in that path.
         """
         if start in endpoints:
-            print(start)
             raise ValueError("START cannot also be in ENDPOINTS")
 
         visited = set([])
@@ -105,10 +105,10 @@ class NavGraph:
                         # presumably already locked it, or in the case of
                         # startup we share the base station with the
                         # other Kobuki
-                        for waypoint in new_path[1:]:
+                        for waypoint in new_path:
                             waypoint.lock_holder = robot_id
                         
-                        print("New path for ", robot_id, ":", new_path) # Debug
+                        #print("New path for ", robot_id, ":", new_path) # Debug
                         return new_path
 
                     new_paths.append(new_path)
