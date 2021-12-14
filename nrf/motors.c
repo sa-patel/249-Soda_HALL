@@ -36,8 +36,11 @@ const float kp_head = 100;
 const float kd_head = 1 / PERIOD;
 const float kp_dist = 100;
 #define TICKS_PER_RAD (2637)
+#define TICKS_PER_METER (11000)
 const float kp_enc_turn = 300./TICKS_PER_RAD;
 int g_desired_enc_diff = 0;
+int g_remaining_enc = 0;
+int g_orig_remaining_enc = 0;
 
 volatile int left = 0;
 volatile int right = 0;
@@ -89,14 +92,33 @@ void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc) {
     g_right_enc = right_enc;
 }
 
+static inline int overflow_subtract(uint16_t a, uint16_t b) {
+    int32_t diff = a - b;
+    if (diff > UINT16_MAX>>1) {
+        return -(b + (UINT16_MAX - a));
+    }
+    if (-diff > UINT16_MAX>>1) {
+        return a + (UINT16_MAX - b);
+    }
+    return diff;
+}
+
 void drive(uint16_t left_enc, uint16_t right_enc) {
     // static uint16_t prev_left_enc = 0;
     // static uint16_t prev_right_enc = 0;
-    int diff = (right_enc - g_right_enc) - (left_enc - g_left_enc);
-    int error = -diff - g_desired_enc_diff;
-    int turn_speed = (int)(kp_enc_turn*error);
-    printf("speeds %d %d\n", -turn_speed, turn_speed);
-    kobukiDriveDirect(-turn_speed, turn_speed);
+    int diff = overflow_subtract(right_enc, g_right_enc) - overflow_subtract(left_enc, g_left_enc);
+    // int diff = (right_enc - g_right_enc) - (left_enc - g_left_enc);
+    int error = g_desired_enc_diff - diff;
+    printf("error %d ",error);
+    // int turn_speed = (int)(kp_enc_turn*error);
+    int turn_speed = clamp((int)(kp_enc_turn*error), 80);
+    int drive_speed = 0;
+    if (drive_state == STRAIGHT && g_remaining_enc > 100) {
+        drive_speed = BASE_SPEED;
+    }
+    g_remaining_enc = g_orig_remaining_enc - overflow_subtract(right_enc, g_right_enc);
+    printf("speeds %d %d\n", drive_speed+turn_speed, drive_speed-turn_speed);
+    kobukiDriveDirect(clamp(drive_speed-turn_speed, MAX_SPEED), clamp(drive_speed+turn_speed, MAX_SPEED));
 
 }
 
@@ -116,6 +138,8 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
 
     transition(head_error);
     g_desired_enc_diff = (int)(head_error*TICKS_PER_RAD);
+    g_remaining_enc = (int)(remaining_dist*TICKS_PER_METER);
+    g_orig_remaining_enc = (int)(remaining_dist*TICKS_PER_METER);
 
 
     // Calculate the correction terms.
