@@ -22,7 +22,7 @@ from customObjects import Waypoint
 from waiter import KobukiRobot
 import server
 
-LOOP_PERIOD = 0.25 # Period, in seconds, of the main loop.
+LOOP_PERIOD = 0.05 # Period, in seconds, of the main loop.
 NUM_KOBUKIS = 1
 KOBUKI_NUM_1 = 97
 KOBUKI_NUM_2 = 98
@@ -74,7 +74,7 @@ def main_loop():
     # bt2.connect()
 
     # Simulate bluetooth connection when testing without nrf
-    bt1.connect_sim()
+    bt1.connect()
     #bt2.connect_sim()
     #waypoints = [Waypoint(i, coords[i]) for i in range(13)]
 
@@ -88,6 +88,7 @@ def main_loop():
         #button2 = bt2.receive_button_press()
 
         if button1:
+            print("PRESSED BUTTON")
             waiter1.push_button()
         #if button2:
         #    waiter2.push_button()
@@ -100,10 +101,7 @@ def main_loop():
         #bt2.transmit_nav(*waiter1.get_heading())
         transmit_display(waiter1, bt1)
         #transmit_display(waiter2, bt2)
-
-        # time.sleep(LOOP_PERIOD)
-# except: 
-  
+        time.sleep(LOOP_PERIOD)
 
 if __name__ == "__main__":
 
