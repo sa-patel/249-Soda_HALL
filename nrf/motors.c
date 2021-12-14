@@ -18,6 +18,7 @@
 #include "nrf_serial.h"
 
 #include <math.h>
+#include <stdint.h>
 
 
 // Motor speed constants
@@ -34,6 +35,9 @@ const float kdd_pos = 0; // Not implemented
 const float kp_head = 100;
 const float kd_head = 1 / PERIOD;
 const float kp_dist = 100;
+#define TICKS_PER_RAD (2637)
+const float kp_enc_turn = 300./TICKS_PER_RAD;
+int g_desired_enc_diff = 0;
 
 volatile int left = 0;
 volatile int right = 0;
@@ -69,12 +73,31 @@ int clamp(int value, int max) {
     return value;
 }
 
-// Drive the kobuki motors
-void drive(void) {
-    int left_encoder = clamp(left, MAX_SPEED);
-    int right_encoder = clamp(right, MAX_SPEED);
-    //printf("getting drive: %d, %d \n", left_encoder, right_encoder);
-    kobukiDriveDirect(left_encoder, right_encoder);
+// // Drive the kobuki motors
+// void drive(void) {
+//     int left_power = clamp(left, MAX_SPEED);
+//     int right_power = clamp(right, MAX_SPEED);
+//     //printf("getting drive: %d, %d \n", left_encoder, right_encoder);
+//     kobukiDriveDirect(left_power, right_power);
+// }
+
+uint16_t g_left_enc = 0;
+uint16_t g_right_enc = 0;
+
+void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc) {
+    g_left_enc = left_enc;
+    g_right_enc = right_enc;
+}
+
+void drive(uint16_t left_enc, uint16_t right_enc) {
+    // static uint16_t prev_left_enc = 0;
+    // static uint16_t prev_right_enc = 0;
+    int diff = (right_enc - g_right_enc) - (left_enc - g_left_enc);
+    int error = -diff - g_desired_enc_diff;
+    int turn_speed = (int)(kp_enc_turn*error);
+    printf("speeds %d %d\n", -turn_speed, turn_speed);
+    kobukiDriveDirect(-turn_speed, turn_speed);
+
 }
 
 static inline void transition(float head_error) {
@@ -92,6 +115,8 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
     static float prev_head_error = 0;
 
     transition(head_error);
+    g_desired_enc_diff = (int)(head_error*TICKS_PER_RAD);
+
 
     // Calculate the correction terms.
     float delta_pos_error = pos_error - prev_pos_error;
