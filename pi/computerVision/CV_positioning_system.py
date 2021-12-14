@@ -9,7 +9,7 @@
 # General flow:
 # Find position of origin and other stationary AR Tag markers
 # Save positional data and remove markers if necessary
-
+from computerVision.opencvtest import Webcam_test
 import numpy as np
 import cv2 as cv
 import glob
@@ -18,6 +18,7 @@ from cv2 import aruco
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import math
+
 
 origin_id = 99; # The origin of the space defined by an AR Tag
 
@@ -67,6 +68,7 @@ origin_rvec = np.empty([3,1])
 # Robots are designated AR Tag IDs 98 & 99
 class CV_positioning_system:
 	port_num = 0
+	cam = 0
 	# The stationary positions reflect physical positions of waypoints and destination points. 
 	# These do not move over time.
 
@@ -86,24 +88,64 @@ class CV_positioning_system:
 		# frame_markers = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 		
 
-		# Live vide
+		# Live video
+
+		# for i in range(4): 
+		# 	try: 
+		# 		self.port_num = i
+		# 		cam = cv2.VideoCapture(i)
+		# 		ret, image = cam.read()
+		# 		cv2.imshow('Imagetest',image)
+		# 		break
+		# 	except:
+		# 		pass
+
+
+		# for i in range(): 
+		# 	self.port_num = i
+		# 	cam = cv2.VideoCapture(i)
+		# 	ret, image = cam.read()
+		# 	if ret: 
+		# 		break
+
+		# print(self.port_num)
+		
+		# for i in range(5): 
+		# 	self.port_num = i
+		# 	cam = cv2.VideoCapture(i)
+		# 	ret, image = cam.read()
+		# 	if ret: 
+		# 		break
+		webcam_testing = Webcam_test()
+		self.port_num = webcam_testing.determine_port()
+		print(self.port_num)
 		# try:
 		# 	cam = cv2.VideoCapture(0) 
 		# 	self.port_num = 0
+		# 	ret, image = cam.read()
+		# 	cv2.imshow('Imagetest',image)
 		# except:
-		# 	self.port_num = 1
-		# 	cam = cv2.VideoCapture(self.port_num)
+		# 	try:
+		# 		self.port_num = 1
+		# 		cam = cv2.VideoCapture(self.port_num)
+		# 		ret, image = cam.read()
+		# 		cv2.imshow('Imagetest',image)
+		# 	except:
+		# 		self.port_num = 2
+		# 		cam = cv2.VideoCapture(self.port_num)
+		# 		ret, image = cam.read()
+		# 		cv2.imshow('Imagetest',image)
 		
-		self.port_num = 0
-		cam = cv2.VideoCapture(self.port_num)
-		ret, frame = cam.read()
+		# self.port_num = 2
+		self.cam = cv2.VideoCapture(self.port_num)
+		ret, frame = self.cam.read()
 
 		cv2.namedWindow("test")
 
 		image_accepted = False
 
 		while not (image_accepted):
-			ret, frame = cam.read()
+			ret, frame = self.cam.read()
 			if not ret:
 				print("Camera Read failure")
 				break
@@ -136,14 +178,14 @@ class CV_positioning_system:
 
 			k = cv2.waitKey(1)
 			if k%256 == 32:
-				cam.release()
+				# self.cam.release()
 				cv2.destroyAllWindows()
 				image_accepted = True
 
 			if k%256 == 27:
 				# ESC pressed
 				print("Escape hit, closing...")
-				cam.release()
+				# self.cam.release()
 				cv2.destroyAllWindows()
 				break
 				
@@ -223,12 +265,12 @@ class CV_positioning_system:
 		robot1_ID = 97
 		robot2_ID = 98
 
-		cam = cv2.VideoCapture(self.port_num)
-		ret, frame = cam.read()
+		# cam = cv2.VideoCapture(self.port_num)
+		ret, frame = self.cam.read()
 
 		# cv2.namedWindow("test")
 
-		ret, frame = cam.read()
+		ret, frame = self.cam.read()
 		if not ret:
 			print("Camera Read failure")
 
@@ -371,6 +413,28 @@ def draw(img, corners, imgpts):
 	# draw top layer in red color
 	return img
 
+def saveCoefficients(mtx, dist):
+    cv_file = cv2.FileStorage("calib_images/calibrationCoefficients.yaml", cv2.FILE_STORAGE_WRITE)
+    cv_file.write("camera_matrix", mtx)
+    cv_file.write("dist_coeff", dist)
+    cv_file.release()
+
+
+def loadCoefficients():
+    # FILE_STORAGE_READ
+    cv_file = cv2.FileStorage("calib_images/calibrationCoefficients.yaml", cv2.FILE_STORAGE_READ)
+
+    # note we also have to specify the type to retrieve other wise we only get a
+    # FileNode object back instead of a matrix
+    camera_matrix = cv_file.getNode("camera_matrix").mat()
+    dist_matrix = cv_file.getNode("dist_coeff").mat()
+
+    # Debug: print the values
+    # print("camera_matrix : ", camera_matrix.tolist())
+    # print("dist_matrix : ", dist_matrix.tolist())
+
+    cv_file.release()
+    return [camera_matrix, dist_matrix]
 
 def track(matrix_coefficients, distortion_coefficients):
 	pointCircle = (0, 0)
