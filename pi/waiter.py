@@ -44,23 +44,13 @@ class KobukiRobot:
                     self.drinks.remove(drink)
                     print("Bot {} delivered {}".format(self.no, drink))
 
-        if len(self.drinks) > 0:
-            route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]], self.no)
-            if len(route) >= 2:
-                self.next_waypoint = route[1]
+            if len(self.drinks) > 0:
+                self.state = RobotStatus.DELIVERYING
             else:
-                self.next_waypoint = None
-                return # Early return to avoid state update
-            self.state = RobotStatus.DELIVERYING
-        else:
-            route = self.graph.find_route(self.prev_waypoint, [self.home], self.no)
-            if len(route) >= 2:
-                self.next_waypoint = route[1]
-            else:
-                self.next_waypoint = None
-                return # Already home.
-            self.state = RobotStatus.RETURNING
-
+                self.state = RobotStatus.RETURNING
+        elif self.state == RobotStatus.LOADING:
+            if len(self.drinks) > 0:
+                self.state = RobotStatus.DELIVERYING
 
 
     def update(self, webcam_data):
@@ -68,32 +58,37 @@ class KobukiRobot:
         y = webcam_data["y"]
         heading = webcam_data["heading"]
 
-        if self.next_waypoint is not None and math.dist((x, y), self.next_waypoint.coords) < DISTANCE_EPSILON:
-            self.displays = [] # By default, the display is blank.
-            if self.next_waypoint in self.destinations:
-                self.state = RobotStatus.UNLOADING
-                self.prev_waypoint = self.next_waypoint
-                self.next_waypoint = None
-            elif self.next_waypoint is self.home:
-                self.state = RobotStatus.LOADING
-                self.prev_waypoint = self.next_waypoint
-                self.next_waypoint = None
-                self.displays = self.drinks.copy()
-            else:
-                if self.state == RobotStatus.RETURNING:
-                    self.prev_waypoint.lock_holder = None
-
-                self.prev_waypoint = self.next_waypoint
-                # Recompute the shortest path each time, because computers are fast
-                # Must be deterministic, so robot doesn't change route mid-delivery
-                if len(self.destinations) > 0:
-                    route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]], self.no)
-                else:
-                    route = self.graph.find_route(self.prev_waypoint, [self.home], self.no)
-                if len(route) >= 2:
-                    self.next_waypoint = route[1]
-                else:
+        if self.next_waypoint is not None:
+            distance_to_next = math.dist((x, y), self.next_waypoint.coords)
+            if distance_to_next < DISTANCE_EPSILON:
+                if self.next_waypoint in self.destinations:
+                    self.state = RobotStatus.UNLOADING
+                    self.prev_waypoint = self.next_waypoint
                     self.next_waypoint = None
+                    self.graph.unlock_by_id(self.no)
+                elif self.next_waypoint is self.home:
+                    self.state = RobotStatus.LOADING
+                    self.prev_waypoint = self.next_waypoint
+                    self.next_waypoint = None
+                    self.displays = self.drinks.copy()
+                    self.graph.unlock_by_id(self.no)
+                else:
+                    self.prev_waypoint = self.next_waypoint
+
+                self.displays = [] # By default, the display is blank.
+
+        # Prep the path, even if we aren't moving yet
+        # Recompute the shortest path each time, because computers are fast
+        if self.state != RobotStatus.UNLOADING and self.state != RobotStatus.LOADING:
+            if len(self.drinks) > 0:
+                self.route = self.graph.find_route(self.prev_waypoint, [self.destinations[0]], self.no)
+            else:
+                self.route = self.graph.find_route(self.prev_waypoint, [self.home], self.no)
+
+            if self.route is None:
+                self.next_waypoint = None
+            else:
+                self.next_waypoint = self.route[1]
 
     def get_heading(self, webcam_data):
         """
@@ -112,8 +107,8 @@ class KobukiRobot:
             x0, y0 = self.prev_waypoint.coords
             x1, y1 = self.next_waypoint.coords
             segment = Segment(x0, y0, x1, y1)
-            self.segment = segment # expose instance variable for debugging
-
+            # expose instance variable for debugging
+            self.segment = segment
             return get_error_terms(this_x, this_y, heading, segment)
 
 def get_error_terms(x, y, heading, desired_segment):

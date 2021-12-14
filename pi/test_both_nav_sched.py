@@ -81,8 +81,10 @@ def loop():
     button1 = bt1.receive_button_press()
     button2 = bt2.receive_button_press()
     if button1:
+        print("pushing button 1")
         waiter1.push_button()
     if button2:
+        print("pushing button 2")
         waiter2.push_button()
 
     scheduler.allocate()
@@ -125,6 +127,8 @@ def loop():
     x2.append(data2["x"])
     y1.append(data1["y"])
     y2.append(data2["y"])
+
+    sleep(0.1)
 
 
 
