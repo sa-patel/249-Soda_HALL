@@ -6,12 +6,14 @@ function placeOrder(){
     const name = document.getElementById("name").value;
     const table = document.getElementById("tableNum").value;
     //const order = document.getElementsByName("drink").value;
+    let order;
     var ele = document.getElementsByName('drink');
     for(i = 0; i < ele.length; i++) {
-        if(ele[i].checked)
-            const order = ele[i].value
+        if(ele[i].checked) {
+            order = ele[i].value;
+        }
     }
-    let query = `name=${name}&table-num=${table}&order=${order}`
+    let query = `name=${name}&table-num=${table}&order=${order}`;
     xhttp.open("GET", `/place-order?${query}`, true);
     xhttp.send(query);
 }
@@ -22,7 +24,7 @@ function placeOrder(){
         <label for="name">Name:</label>
         <input type="text" id="name" name="name"/>
         <br>
-        <label for="tableNum">Table Number:</label>
+        <label for="tableNum">Seat Number:</label>
         <input type="text" id="tableNum" name="tableNum"/>
         <br>
         <label for="order">Your Order:</label><br>
