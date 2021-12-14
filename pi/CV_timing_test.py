@@ -5,9 +5,11 @@ pos_sys = CV_positioning_system()
 count = 0
 start = timeit.timeit()
 
+ ids_to_coords = pos_sys.get_stationary_positions()
+
 for i in range(0,5):
     end = timeit.timeit()
-    ids_to_coords = pos_sys.get_stationary_positions()
+    data = pos_sys.get_robot_positions()
     count = count + 1
 
 end = timeit.timeit()
