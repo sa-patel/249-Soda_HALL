@@ -120,7 +120,20 @@ class BluetoothController:
         #for item in drinks: 
         #   self.display_drink(item)
         #self.display_drink("stop")
-        drinks_string = ",".join(drinks)
+        abbreviations = {
+            "Seltzer":"Sltz",
+            "Water":"Wtr",
+            "Tequila":"Teq",
+            "Beer":"Beer",
+            "Orange Juice":"OJ",
+        }
+        abbrev_drinks = []
+        for drink in drinks:
+            if drink in abbreviations:
+                abbrev_drinks.append(abbreviations[drink])
+            else:
+                abbrev_drinks.append(drink[:4])
+        drinks_string = ",".join(abbrev_drinks)
         self.display_drink(drinks_string)
     
     def send_pid_constants(self, kp_pos, kd_pos, kp_head, kd_head):

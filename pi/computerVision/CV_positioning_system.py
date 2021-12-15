@@ -370,7 +370,7 @@ class CV_positioning_system:
 						#print("rel angle:", relative_angle)
 						#print("rvec_origin Z axis angle", (360/(2*np.pi)) * composedRvec[2])
 
-						robot_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), math.radians(relative_angle))
+						robot_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), -math.radians(relative_angle))
 						#print('----------------')
 		print(robot_positions)
 		return robot_positions
