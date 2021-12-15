@@ -16,6 +16,7 @@ function placeOrder(){
     let query = `name=${name}&table-num=${table}&order=${order}`;
     xhttp.open("GET", `/place-order?${query}`, true);
     xhttp.send(query);
+    alert(`Sent order ${order}`);
 }
 </script>
 </head>
