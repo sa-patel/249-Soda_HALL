@@ -42,7 +42,7 @@ class KobukiRobot:
                 if dest is self.prev_waypoint:
                     self.destinations.remove(dest)
                     self.drinks.remove(drink)
-                    #print("Bot {} delivered {}".format(self.no, drink))
+                    print("Bot {} delivered {}".format(self.no, drink))
 
             if len(self.drinks) > 0:
                 self.state = RobotStatus.DELIVERYING

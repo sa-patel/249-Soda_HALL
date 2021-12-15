@@ -47,8 +47,8 @@ class OrderScheduler:
         unique order identifier.        """
         id = self.next_id
         self.next_id += 1
-        table = 0 if seat < 4 else 1
-        order = Order(customer, seat, table, priority, order, id)
+        table = 0 if int(seat) < 4 else 1
+        order = Order(customer, int(seat), table, int(priority), order, id)
         self.queue.enqueue(order)
         return id
 

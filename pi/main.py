@@ -56,7 +56,7 @@ waiter2.set_home(waypoints[BASE_STATION_2])
 
 #scheduler = OrderScheduler([waiter1, waiter2], waypoints)
 scheduler = OrderScheduler([waiter1], waypoints)
-scheduler.create("Amit",4,"Gin",0)
+#scheduler.create("Amit",4,"Gin",0)
 
 def transmit_display(waiter, bt):
     """When loading drinks, transmit a list of drinks to display."""
@@ -80,7 +80,7 @@ def main_loop():
 
     while True:
         data = pos_sys.get_robot_positions()
-        print("KOUBKI POSITIONS: ",data)
+        print("KOBUKI POSITIONS: ",data)
         data1 = data.get(KOBUKI_NUM_1)
         #data2 = data.get(KOBUKI_NUM_2)
 
@@ -98,13 +98,16 @@ def main_loop():
         #    waiter2.push_button()
 
         scheduler.allocate()
+        scheduler.queue.print_queue()
 
         if data1 is not None:
             waiter1.update(data1)
         #if data2 is not None:
         #   waiter2.update(data2)
-        bt1.transmit_nav(*waiter1.get_heading(data1))
-        #bt2.transmit_nav(*waiter1.get_heading())
+        if data1 is not None:
+            bt1.transmit_nav(*waiter1.get_heading(data1))
+        #if data2 is not None:
+            #bt2.transmit_nav(*waiter1.get_heading(data2))
         transmit_display(waiter1, bt1)
         #transmit_display(waiter2, bt2)
         time.sleep(LOOP_PERIOD)
