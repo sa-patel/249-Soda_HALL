@@ -74,6 +74,8 @@ class CV_positioning_system:
 
 	def get_stationary_positions(self):
 		"""Get locations of tables and waypoints"""
+		global origin_rvec
+		global origin_tvec
 		# -------------------------------------------------------------
 		# Test AR_Tag Relative pose with a fixed image. This section of code will be suplanted with live video later on
 		# Test image shows a robot (ID 2) pointed towards destination (ID 3). Origin marker is given by ID 1
@@ -170,8 +172,8 @@ class CV_positioning_system:
 				imaxis = aruco.drawDetectedMarkers(frame.copy(), corners, ids)
 				for i in range(len(tvecs)):
 					imaxis = aruco.drawAxis(imaxis, new_mtxL, distL, rvecs[i], tvecs[i], length_of_axis)
-					print("Tvec: ", tvecs[i])
-					print("rvec: ", rvecs[i])
+					#print("Tvec: ", tvecs[i])
+					#print("rvec: ", rvecs[i])
 					print('AR_Tag Found')
 					cv2.imshow('AR_Tag', imaxis)
 
@@ -261,6 +263,8 @@ class CV_positioning_system:
 	# Robots are designated AR Tag IDs 98 & 99
 	def get_robot_positions(self):
 		"""Get location and heading of kobukis"""
+		global origin_rvec
+		global origin_tvec
 
 		robot1_ID = 97
 		robot2_ID = 98
@@ -320,7 +324,7 @@ class CV_positioning_system:
 				# print("rvec: {0} ".format(ids[i]), rvecs[i])
 
 				if (ids[i] == origin_id):
-					print("Origin found")
+					# print("Origin found")
 					origin_tvec = tvecs[i]
 					origin_rvec = rvecs[i]
 					R_origin, _ = cv2.Rodrigues(origin_rvec)
@@ -356,7 +360,7 @@ class CV_positioning_system:
 						#print("R_target: ", R_target)
 						# print("R_target[:,0]: id {0} ".format(ids[i]), R_target[:,0])
 						# print("R_target[:,1]: id {0} ".format(ids[i]), R_target[:,1])
-						print("R_origin[:,0]:", R_origin[:,0])
+						# print("R_origin[:,0]:", R_origin[:,0])
 
 
 						# takes the x axis (the first column of the rotation matrix) and finds the relative angle between them using arc-cosine
@@ -372,7 +376,7 @@ class CV_positioning_system:
 
 						robot_positions[int(ids[i])] = (float(composedTvec[0]), float(composedTvec[1]), -math.radians(relative_angle))
 						#print('----------------')
-		print(robot_positions)
+		#print(robot_positions)
 		return robot_positions
 
 
