@@ -38,7 +38,7 @@ class KobukiRobot:
     def push_button(self):
         if self.state == RobotStatus.UNLOADING:
             # TODO: replace drinks, destinations with Order class because this is garbage
-            for (drink, dest) in zip(self.drinks, self.destinations):
+            for drink, dest in list(zip(self.drinks, self.destinations)):
                 if dest is self.prev_waypoint:
                     self.destinations.remove(dest)
                     self.drinks.remove(drink)
