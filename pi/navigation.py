@@ -5,27 +5,26 @@ Plans the routes for each robot and keeps the robots on their track.
 """
 Waypoints:
 
-C = Corner
 X = Intermediate waypoint
 B = Base station
 
-  C           C---X---X---C           C
+  X               X---X               X
   | ╔═════════╗   |   |   ╔═════════╗ |
   | ║         ║   |   |   ║         ║ |
   | ╚═════════╝   |   |   ╚═════════╝ |
-  C-----------C---X---X---C-----------C
-                   \ /
-                    B
+  X---------------X---X---------------X
+                  |   |
+                  B   B
 
 Waypoint IDs:
 
-  1           2---3---4---5           6
+  2               3---4               5
   | ╔═════════╗   |   |   ╔═════════╗ |
   | ║         ║   |   |   ║         ║ |
   | ╚═════════╝   |   |   ╚═════════╝ |
-  7-----------8---9---10--11----------12
+  6---------------7---8---------------9
                   |   |
-                  0   13
+                  0   1
 
 Seat numbers:
     ╔═════════╗           ╔═════════╗
@@ -40,25 +39,24 @@ import math
 from customObjects import Segment, RobotStatus, Waypoint
 
 BASE_STATION_1 = 0
-BASE_STATION_2 = 13
-NUM_WAYPOINTS = 14
+BASE_STATION_2 = 1
+NUM_WAYPOINTS = 10
 
 WAYPOINT_EDGES = [
-    (0, 9), (13, 10), (1, 7), (7, 8),
-    (8, 9), (9, 3), (9, 10), (3, 2),
-    (3, 4), (4, 5), (10, 11), (11, 12),
-    (12, 6), (10, 4),
+    (2, 6), (6, 7), (7, 3), (3, 4),
+    (4, 8), (7, 8), (8, 9), (9, 5),
+    (0, 7), (1, 8),
 ]
 
 SEAT_NO_TO_WAYPOINT_ID = {
-    1: 9,
-    2: 2,
-    3: 7,
-    4: 8,
-    5: 5,
-    6: 6,
-    7: 11,
-    8: 12,
+    1: 2,
+    2: 3,
+    3: 6,
+    4: 7,
+    5: 4,
+    6: 5,
+    7: 8,
+    8: 9,
 }
 
 class NavGraph:
