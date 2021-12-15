@@ -90,7 +90,8 @@ int clamp(int value, int max) {
 uint16_t g_left_enc = 0;
 uint16_t g_right_enc = 0;
 
-void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc) {
+void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc, int backing_up) {
+    if (drive_state == BACK && !backing_up) return;
     g_left_enc = left_enc;
     g_right_enc = right_enc;
     g_driving = true;
@@ -111,7 +112,7 @@ void motors_drive_back(uint16_t left_enc, uint16_t right_enc){
     g_orig_remaining_enc = (int)(-backup_dist*TICKS_PER_METER);
     g_remaining_enc = g_orig_remaining_enc;
     drive_state = BACK;
-    motors_encoders_clear(left_enc, right_enc);
+    motors_encoders_clear(left_enc, right_enc, true);
     g_driving = true;
 
 }
@@ -145,7 +146,9 @@ void drive(uint16_t left_enc, uint16_t right_enc) {
     g_remaining_enc = g_orig_remaining_enc - overflow_subtract(right_enc, g_right_enc);
     // printf("speeds %d %d\n", drive_speed+turn_speed, drive_speed-turn_speed);
     kobukiDriveDirect(clamp(drive_speed-turn_speed, MAX_SPEED), clamp(drive_speed+turn_speed, MAX_SPEED));
-
+    // char buf[16];
+    // snprintf(buf, 15, "%d\n", g_remaining_enc);
+    // display_write(buf, DISPLAY_LINE_1);
 }
 
 static inline void transition(float head_error) {

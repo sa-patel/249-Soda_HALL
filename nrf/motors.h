@@ -7,7 +7,7 @@ void motors_drive_back(uint16_t left_enc, uint16_t right_enc);
 
 void drive(uint16_t left_enc, uint16_t right_enc);
 
-void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc);
+void motors_encoders_clear(uint16_t left_enc, uint16_t right_enc, int backing_up);
 
 void motors_stop(void);
 

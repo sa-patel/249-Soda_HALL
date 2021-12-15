@@ -280,7 +280,7 @@ int main(void) {
   //nrf_mtx_init(&sensor_lock);
 
   kobukiSensorPoll(&sensors);
-  motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+  motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder, false);
   extern const nrf_serial_t * serial_ref;
   int status = 0;
   int count = 0;
@@ -314,7 +314,7 @@ int main(void) {
 				motors_stop();
 			} else {
 				motors_drive_correction(g_pos_error, g_head_error, g_remain_dist);
-				motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+				motors_encoders_clear(sensors.leftWheelEncoder, sensors.rightWheelEncoder, false);
 			}
 			g_transmission_rx = false;
 			lock = false;
