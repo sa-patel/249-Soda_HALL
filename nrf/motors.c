@@ -118,7 +118,10 @@ void motors_drive_back(uint16_t left_enc, uint16_t right_enc){
 
 
 void drive(uint16_t left_enc, uint16_t right_enc) {
-    if (!g_driving) return;
+    if (!g_driving && drive_state != BACK) {
+        kobukiDriveDirect(0, 0);
+        return;
+    }
     // static uint16_t prev_left_enc = 0;
     // static uint16_t prev_right_enc = 0;
     int diff = overflow_subtract(right_enc, g_right_enc) - overflow_subtract(left_enc, g_left_enc);
@@ -133,6 +136,7 @@ void drive(uint16_t left_enc, uint16_t right_enc) {
     }
     else if (drive_state == BACK) {
         drive_speed = -BASE_SPEED;
+        turn_speed = 0;
         if (g_remaining_enc > -100) {
             drive_state = STRAIGHT;
         }
@@ -170,7 +174,7 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
     g_remaining_enc = (int)(remaining_dist*TICKS_PER_METER);
     g_orig_remaining_enc = (int)(remaining_dist*TICKS_PER_METER);
 
-
+    // Ignore the rest of this function.
     // Calculate the correction terms.
     float delta_pos_error = pos_error - prev_pos_error;
     float delta_head_error = head_error - prev_head_error;
