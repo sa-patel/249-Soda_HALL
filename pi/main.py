@@ -60,7 +60,7 @@ scheduler = OrderScheduler([waiter1,waiter2], waypoints)
 
 def transmit_display(waiter, bt):
     """When loading drinks, transmit a list of drinks to display."""
-    if waiter.get_status() == RobotStatus.LOADING:
+    if waiter.get_status() == RobotStatus.LOADING or waiter.get_status() == RobotStatus.UNLOADING:
         bt.send_drinks_to_display(waiter.drinks)
     # TODO transmit blank in other states?
 
@@ -85,10 +85,10 @@ def main_loop():
         data2 = data.get(KOBUKI_NUM_2)
 
         state1 = waiter1.get_status()
-        if state1 == RobotStatus.LOADING or state1 == RobotStatus.UNLOADING:
+        if True or state1 == RobotStatus.LOADING or state1 == RobotStatus.UNLOADING:
             button1 = bt1.receive_button_press()
         state2 = waiter2.get_status()
-        if state2 == RobotStatus.LOADING or state2 == RobotStatus.UNLOADING:
+        if True or state2 == RobotStatus.LOADING or state2 == RobotStatus.UNLOADING:
              button2 = bt2.receive_button_press()
 
         if button1:

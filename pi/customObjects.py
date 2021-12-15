@@ -22,10 +22,12 @@ class Segment:
         return (self.xf-self.x0)**2 + (self.yf-self.y0)**2
 
 class Queue:
-    data = []
-    head = 0
-    tail = 0
-    size = 0
+    def __init__(self): 
+        self.data = []
+        self.head = 0
+        self.tail = 0
+        self.size = 0
+        
     def enqueue(self, item):
         self.data.append(item)
         self.head += 1
@@ -67,12 +69,17 @@ class Queue:
         return self.data.pop(index_table)
 
     def print_queue(self):
-        iter = self.tail
-        print("Tail ",end="")
-        while iter != self.head:
-            print(" -> {",self.data[iter].order, "for", self.data[iter].name,"on Table", self.data[iter].table,"}",end="")
-            iter += 1
+        print("QUEUE: ")
+        for i  in range(0,len(self.data)):
+            print(" -> {",self.data[i].order, "for", self.data[i].name,"on Table", self.data[i].table,"}",end="")
         print("\n")
+            
+        # iter = self.tail
+        # print("Tail ",end="")
+        # while iter != self.head:
+        #     print(" -> {",self.data[iter].order, "for", self.data[iter].name,"on Table", self.data[iter].table,"}",end="")
+        #     iter += 1
+        # print("\n")
 
 class Order:
     def __init__(self, name, seat, table, priority, order, order_id):
