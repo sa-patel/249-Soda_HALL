@@ -145,7 +145,9 @@ def get_error_terms(x, y, heading, desired_segment):
         heading_error = subtract_angles(heading, robot_to_endpoint)
         positional_error = 0
     else:
-        heading_error = subtract_angles(heading, segment_angle)
+        # Aim directly for the endpoint instead of parallel to the line.
+        heading_error = subtract_angles(heading, robot_to_endpoint)
+        # heading_error = subtract_angles(heading, segment_angle)
 
     remaining_dist = math.dist([x, y], [x2, y2])
     segment_length = desired_segment.length_squared()**0.5
