@@ -54,7 +54,7 @@ KobukiState_t current_state = IDLE;
 static simple_ble_config_t ble_config = {
         // c0:98:e5:49:xx:xx
         .platform_id       = 0x49,    // used as 4th octect in device BLE address
-        .device_id         = 0x00FE, // TODO: replace with your lab bench number
+        .device_id         = 0x00FF, // TODO: replace with your lab bench number
         .adv_name          = "Robot Waiter", // used in advertisements if there is room
         .adv_interval      = MSEC_TO_UNITS(500, UNIT_0_625_MS),
         .min_conn_interval = MSEC_TO_UNITS(25, UNIT_1_25_MS),
@@ -152,8 +152,8 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	      //display_write("...............", DISPLAY_LINE_0);
 	      // snprintf(disp,"%-15s", 16, "hello");
 	      // printf(disp);
-	      g_display_has_data = true;
-	      // display_write(buf_disp,DISPLAY_LINE_0);
+	      //g_display_has_data = true;
+	    	display_write(buf_disp,DISPLAY_LINE_0);
 	    }
 	    else if (simple_ble_is_char_event(p_ble_evt, &get_button_press)) {
 	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
@@ -285,7 +285,7 @@ int main(void) {
   int status = 0;
   int count = 0;
 
-  char blank[] = "               ";
+  char blank[] = "................";
   
   while(1) {
   	//kobukiSensorPoll(&sensors);
@@ -320,7 +320,11 @@ int main(void) {
 			lock = false;
 		} 
     }
-    drive(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+	if (sensors.bumps_wheelDrops.bumpRight || sensors.bumps_wheelDrops.bumpCenter || sensors.bumps_wheelDrops.bumpLeft) {
+		motors_drive_back(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+	} else {
+    	drive(sensors.leftWheelEncoder, sensors.rightWheelEncoder);
+	}
     if (!lock){
     	lock = true;
     	kobukiSensorPoll(&sensors);
@@ -328,11 +332,12 @@ int main(void) {
     }
     nrf_delay_ms(10);
 
-    if (g_display_has_data) {
-    	g_display_has_data = false;
-    	display_write(blank, DISPLAY_LINE_0);
-    	display_write(buf_disp,DISPLAY_LINE_0);
-    }
+    // if (g_display_has_data) {
+    // 	g_display_has_data = false;
+    // 	display_write(blank, DISPLAY_LINE_0);
+
+    // 	display_write(buf_disp,DISPLAY_LINE_0);
+    // }
     // app_uart_flush();
     //status = nrf_serial_rx_drain(serial_ref);
 

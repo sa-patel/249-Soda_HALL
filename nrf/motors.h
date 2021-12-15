@@ -1,6 +1,8 @@
 #include <stdint.h>
 void motors_drive_correction(float pos_error, float head_error, float remaining_dist);
 
+void motors_drive_back(uint16_t left_enc, uint16_t right_enc);
+
 // void drive(void);
 
 void drive(uint16_t left_enc, uint16_t right_enc);
