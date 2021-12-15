@@ -22,8 +22,8 @@
 
 
 // Motor speed constants
-const int BASE_SPEED = 100;
-const int MAX_SPEED = 150;
+const int BASE_SPEED = 130;
+const int MAX_SPEED = 170;
 
 // PID constants
 #define PERIOD (0.25) // Expected time between iterations
@@ -36,7 +36,8 @@ const float kp_head = 100;
 const float kd_head = 1 / PERIOD;
 const float kp_dist = 100;
 #define TICKS_PER_RAD (2637)
-#define TICKS_PER_METER (11000)
+#define TICKS_PER_METER (10000)
+const float backup_dist = 0.2; // meters
 const float kp_enc_turn = 300./TICKS_PER_RAD;
 int g_desired_enc_diff = 0;
 int g_remaining_enc = 0;
@@ -49,7 +50,8 @@ int g_driving = true;
  // initialize state
 typedef enum {
     STRAIGHT,
-    TURN
+    TURN,
+    BACK
 } DriveState_t;
 
 static DriveState_t drive_state = STRAIGHT;
@@ -105,6 +107,16 @@ static inline int overflow_subtract(uint16_t a, uint16_t b) {
     return diff;
 }
 
+void motors_drive_back(uint16_t left_enc, uint16_t right_enc){
+    g_orig_remaining_enc = (int)(-backup_dist*TICKS_PER_METER);
+    g_remaining_enc = g_orig_remaining_enc;
+    drive_state = BACK;
+    motors_encoders_clear(left_enc, right_enc);
+    g_driving = true;
+
+}
+
+
 void drive(uint16_t left_enc, uint16_t right_enc) {
     if (!g_driving) return;
     // static uint16_t prev_left_enc = 0;
@@ -114,11 +126,18 @@ void drive(uint16_t left_enc, uint16_t right_enc) {
     int error = g_desired_enc_diff - diff;
     // printf("error %d ",error);
     // int turn_speed = (int)(kp_enc_turn*error);
-    int turn_speed = clamp((int)(kp_enc_turn*error), 80);
+    int turn_speed = clamp((int)(kp_enc_turn*error), 110);
     int drive_speed = 0;
     if (drive_state == STRAIGHT && g_remaining_enc > 100) {
         drive_speed = BASE_SPEED;
     }
+    else if (drive_state == BACK) {
+        drive_speed = -BASE_SPEED;
+        if (g_remaining_enc > -100) {
+            drive_state = STRAIGHT;
+        }
+    }
+    printf("remaining %d orig %d right %d\n", g_remaining_enc, g_orig_remaining_enc, right_enc);
     g_remaining_enc = g_orig_remaining_enc - overflow_subtract(right_enc, g_right_enc);
     // printf("speeds %d %d\n", drive_speed+turn_speed, drive_speed-turn_speed);
     kobukiDriveDirect(clamp(drive_speed-turn_speed, MAX_SPEED), clamp(drive_speed+turn_speed, MAX_SPEED));
@@ -126,6 +145,12 @@ void drive(uint16_t left_enc, uint16_t right_enc) {
 }
 
 static inline void transition(float head_error) {
+    if (drive_state == BACK) {
+        if (g_remaining_enc > -100) {
+            drive_state = STRAIGHT;
+        }
+        return;
+    }
     if (fabs(head_error) > TURN_THRESHOLD) {
         drive_state = TURN;
     } else if (fabs(head_error) < STRAIGHT_THRESHOLD) {
@@ -140,6 +165,7 @@ void motors_drive_correction(float pos_error, float head_error, float remaining_
     static float prev_head_error = 0;
 
     transition(head_error);
+    if (drive_state == BACK) return;
     g_desired_enc_diff = (int)(head_error*TICKS_PER_RAD);
     g_remaining_enc = (int)(remaining_dist*TICKS_PER_METER);
     g_orig_remaining_enc = (int)(remaining_dist*TICKS_PER_METER);
