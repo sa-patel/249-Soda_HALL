@@ -133,7 +133,7 @@ class BluetoothController:
                 abbrev_drinks.append(abbreviations[drink])
             else:
                 abbrev_drinks.append(drink[:4])
-        drinks_string = ",".join(abbrev_drinks)
+        drinks_string = "{:16}".format(",".join(abbrev_drinks))
         self.display_drink(drinks_string)
     
     def send_pid_constants(self, kp_pos, kd_pos, kp_head, kd_head):
