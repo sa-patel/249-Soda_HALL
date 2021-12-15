@@ -11,20 +11,16 @@ import matplotlib.animation as animation
 import numpy as np
 waypoint_locations = [
     (4, 0),
+    (6, 0),
     (0, 10),
-    (3, 10),
     (4, 10),
     (6, 10),
-    (7, 10),
     (10, 10),
     (0, 5),
-    (3, 5),
     (4, 5),
     (6, 5),
-    (7, 5),
     (10, 5),
-    (6, 0),
-]
+    ]
 
 waypoints = [Waypoint(i, waypoint_locations[i]) for i in range(NUM_WAYPOINTS)]
 nav_graph = NavGraph()
@@ -52,16 +48,8 @@ def noise(sigma):
     return gauss(0, sigma)
 
 data = {
-    "kobuki1": {
-        "x": 4.0,
-        "y": 0,
-        "heading": 0,
-    },
-    "kobuki2": {
-        "x": 6.0,
-        "y": 0,
-        "heading": 1,
-    },
+    "kobuki1": [4.0, 0, 0],
+    "kobuki2": [6, 0, 0],
 }
 
 format_string = "{:28}{:6.2f}{:6.2f}{:9.2f} w_next={:<3} {:28}{:6.2f}{:6.2f}{:9.2f} w_next={:<3}"
@@ -105,33 +93,33 @@ def loop():
             STEP = 0.5 # meters
             d = min(STEP, remaining_dist)
             # heading = noisy_theta - heading_error
-            heading = bot_data["heading"] - heading_error + noise(0.2)
+            heading = bot_data[2] - heading_error + noise(0.2)
             if heading < -pi:
                 heading += 2*pi
             elif heading > pi:
                 heading -= 2*pi
-            bot_data["heading"] = heading
-            bot_data["x"] += d*sin(heading) - DECAY*positional_error*cos(-theta)
-            bot_data["y"] += d*cos(heading) - DECAY*positional_error*sin(-theta)
+            bot_data[2] = heading
+            bot_data[0] += d*sin(heading) - DECAY*positional_error*cos(-theta)
+            bot_data[1] += d*cos(heading) - DECAY*positional_error*sin(-theta)
             #if waiter.no == 1:
                 #print(bot_data)
-            assert(bot_data["x"] > xL and bot_data["x"] < xU)
-            assert(bot_data["y"] > yL and bot_data["y"] < yU)
+            assert(bot_data[0] > xL and bot_data[0] < xU)
+            assert(bot_data[1] > yL and bot_data[1] < yU)
         else:
             bt.transmit_nav(positional_error, heading_error, remaining_dist)
     
     print(format_string.format(
-            waiter1.get_status(), data1["x"], data1["y"], data1["heading"], 
+            waiter1.get_status(), data1[0], data1[1], data1[2], 
             waiter1.prev_waypoint.ident,
-            waiter2.get_status(), data2["x"], data2["y"], data2["heading"], 
+            waiter2.get_status(), data2[0], data2[1], data2[2], 
             waiter2.prev_waypoint.ident,
         ))
-    x1.append(data1["x"])
-    x2.append(data2["x"])
-    y1.append(data1["y"])
-    y2.append(data2["y"])
+    x1.append(data1[0])
+    x2.append(data2[0])
+    y1.append(data1[1])
+    y2.append(data2[1])
 
-    sleep(0.1)
+    # sleep(0.1)
 
 
 
@@ -148,13 +136,13 @@ scheduler.create("Max",6,"Pop",0)
 print_header = header_format_string.format("Status", "x", "y", "heading", "segment", "Status", "x", "y", "heading", "segment")
 print(print_header)
 while scheduler.queue.size > 0 or len(waiter1.destinations) > 0 or len(waiter2.destinations) > 0 or waiter1.get_status() is not RobotStatus.LOADING or waiter2.get_status() is not RobotStatus.LOADING:
-    try:
+    # try:
         loop()
         # sleep(0.1)
-    except Exception as e:
-        print(e)
-        break
-
+    # except Exception as e:
+    #     print(e)
+    #     break
+print("done")
 fig = plt.figure(figsize=(10, 6))
 ax = fig.add_subplot(xlim = (-1, 11), ylim = (-1, 11))
 history1=[[],[]]
@@ -178,8 +166,8 @@ ani = animation.FuncAnimation(
 
 table1_rect = np.array([[1, 3, 3, 1, 1],[6, 6, 9, 9, 6]])
 table2_rect = table1_rect + np.array([6,0]).reshape(2,1)
-delivery_i = (1,2,5,6,7,8,11,12)
-intermediate_i = (3,4,9,10)
+delivery_i = (2,3,4,5,6,7,8,9)
+intermediate_i = ()
 delivery_locations = []
 intermediate_locations = []
 for i in delivery_i:
@@ -191,6 +179,6 @@ intermediate_locations = np.array(intermediate_locations).T
 plt.plot(table1_rect[0], table1_rect[1], 'r')
 plt.plot(table2_rect[0], table2_rect[1], 'r')
 plt.plot(delivery_locations[0], delivery_locations[1], 'b+')
-plt.plot(intermediate_locations[0], intermediate_locations[1], 'mx')
+# plt.plot(intermediate_locations[0], intermediate_locations[1], 'mx')
 plt.plot([5],[0],'ro')
 plt.show()
