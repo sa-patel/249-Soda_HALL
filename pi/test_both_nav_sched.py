@@ -123,13 +123,23 @@ def loop():
 
 
 
+# scheduler.create("Amit",1,"Gin",0)
+# scheduler.create("Zak",2,"Rum",0)
+# scheduler.create("Sagar",3,"Beer",0)
+# scheduler.create("Max",6,"Vodka",0)
+# scheduler.create("Amit2",5,"Cola",0)
+# scheduler.create("Amit",1,"Whiskey",0)
+# scheduler.create("Zak",2,"Tequila",0)
+# scheduler.create("Sagar",3,"Seltzer",0)
+# scheduler.create("Max",6,"Pop",0)
+
 scheduler.create("Amit",1,"Gin",0)
 scheduler.create("Zak",2,"Rum",0)
 scheduler.create("Sagar",3,"Beer",0)
-scheduler.create("Max",6,"Vodka",0)
-scheduler.create("Amit2",5,"Cola",0)
-scheduler.create("Amit",1,"Whiskey",0)
-scheduler.create("Zak",2,"Tequila",0)
+scheduler.create("Max",4,"Vodka",0)
+scheduler.create("Amit2",1,"Cola",0)
+scheduler.create("Amit",2,"Whiskey",0)
+scheduler.create("Zak",3,"Tequila",0)
 scheduler.create("Sagar",3,"Seltzer",0)
 scheduler.create("Max",6,"Pop",0)
 
@@ -143,12 +153,12 @@ while scheduler.queue.size > 0 or len(waiter1.destinations) > 0 or len(waiter2.d
     #     print(e)
     #     break
 print("done")
-fig = plt.figure(figsize=(10, 6))
+fig = plt.figure(figsize=(14, 9))
 ax = fig.add_subplot(xlim = (-1, 11), ylim = (-1, 11))
 history1=[[],[]]
 history2=[[],[]]
 travel_line = [ax.plot([], [], 'bg'[i])[0] for i in range(NUM_KOBUKIS)]
-bots = [ax.plot([], [], 'bg'[i]+'o')[0] for i in range(NUM_KOBUKIS)]
+bots = [ax.plot([], [], 'bg'[i]+'o', markersize=16)[0] for i in range(NUM_KOBUKIS)]
 
 def update(i):
     history1[0].append(x1[i])
@@ -161,7 +171,7 @@ def update(i):
     travel_line[1].set_data(history2)
 
 ani = animation.FuncAnimation(
-    fig, update, len(x1), interval=50, repeat=False
+    fig, update, len(x1), interval=90, repeat=False
 )
 
 table1_rect = np.array([[1, 3, 3, 1, 1],[6, 6, 9, 9, 6]])
@@ -180,5 +190,5 @@ plt.plot(table1_rect[0], table1_rect[1], 'r')
 plt.plot(table2_rect[0], table2_rect[1], 'r')
 plt.plot(delivery_locations[0], delivery_locations[1], 'b+')
 # plt.plot(intermediate_locations[0], intermediate_locations[1], 'mx')
-plt.plot([5],[0],'ro')
+plt.plot([4, 6],[0, 0],'ro')
 plt.show()
