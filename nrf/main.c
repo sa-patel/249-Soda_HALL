@@ -89,6 +89,7 @@ static int led_state = 1;
 static uint8_t button_press;
 static uint8_t error_data[6];
 static volatile int g_button_pressed = 0;
+static volatile int g_display_has_data = false;
 // static uint8_t control_loop_param[4];
 
 static unsigned char buf_disp[16];
@@ -151,7 +152,8 @@ void ble_evt_write(ble_evt_t const* p_ble_evt) {
 	      //display_write("...............", DISPLAY_LINE_0);
 	      // snprintf(disp,"%-15s", 16, "hello");
 	      // printf(disp);
-	      display_write(buf_disp,DISPLAY_LINE_0);
+	      g_display_has_data = true;
+	      // display_write(buf_disp,DISPLAY_LINE_0);
 	    }
 	    else if (simple_ble_is_char_event(p_ble_evt, &get_button_press)) {
 	      //printf("Data is : %02x %02x \n",error_data[0],error_data[1]);
@@ -282,6 +284,8 @@ int main(void) {
   extern const nrf_serial_t * serial_ref;
   int status = 0;
   int count = 0;
+
+  char blank[] = "               ";
   
   while(1) {
   	//kobukiSensorPoll(&sensors);
@@ -323,6 +327,12 @@ int main(void) {
     	lock = false;
     }
     nrf_delay_ms(10);
+
+    if (g_display_has_data) {
+    	g_display_has_data = false;
+    	display_write(blank, DISPLAY_LINE_0);
+    	display_write(buf_disp,DISPLAY_LINE_0);
+    }
     // app_uart_flush();
     //status = nrf_serial_rx_drain(serial_ref);
 
